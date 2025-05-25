@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CGモデリング タイピングゲーム NEO</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Meiryo', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.js"></script>
+    <script>
+const sketch = (p) => {
+    // Game constants
+    const GAME_DURATIONS = { tutorial: 120, easy: 90, normal: 60, hard: 45 };
+    const WORD_FALL_SPEEDS = { tutorial: 0.4, easy: 0.7, normal: 1.0, hard: 1.5 };
+    const SPAWN_INTERVALS = { tutorial: 3500, easy: 2500, normal: 2000, hard: 1500 };
+    const GAME_VERSION = 'v3.0.0 Final Mix'; // Updated version
+
+    const GAME_STATES = {
+        MENU: 'menu', SETTINGS: 'settings', HIGHSCORES: 'highscores',
+        TUTORIAL: 'tutorial', PLAYING: 'playing', PAUSED: 'paused', RESULTS: 'results'
+    };
+
+    // Game variables
+    let width, height;
+    let currentInput = '';
+    let words = [];
+    let particles = [];
+    let soundEnabled = true;
+    let bgmPlaying = false;
+    let gameTimerInterval = null;
+    let isGamePausedManually = false;
+
+    // Helper: Katakana to Hiragana
+    function katakanaToHiragana(str) {
+        return str.replace(/[\u30a1-\u30f6]/g, function(match) {
+            var chr = match.charCodeAt(0) - 0x60;
+            return String.fromCharCode(chr);
+        });
+    }
+
+    // VRoid Studio related words (Katakana) - from typing2.html
+    const vroidWords = [
+        { japanese: 'ブイロイド', romaji: 'buiroido' }, { japanese: 'スタジオ', romaji: 'sutajio' },
+        { japanese: 'アバター', romaji: 'abataa' }, { japanese: 'モデリング', romaji: 'moderingu' },
+        { japanese: 'テクスチャ', romaji: 'tekusuchaa' }, { japanese: 'ボーン', romaji: 'boon' },
+        { japanese: 'リギング', romaji: 'rigingu' }, { japanese: 'アニメーション', romaji: 'animeeshon' },
+        { japanese: 'エクスポート', romaji: 'ekusupooto' }, { japanese: 'インポート', romaji: 'inpooto' },
+        { japanese: 'マテリアル', romaji: 'materiaru' }, { japanese: 'メッシュ', romaji: 'messhu' },
+        { japanese: 'スキニング', romaji: 'sukiningu' }, { japanese: 'ウェイト', romaji: 'weito' },
+        { japanese: 'バーテックス', romaji: 'baatekkusu' }, { japanese: 'ポリゴン', romaji: 'porigon' },
+        { japanese: 'シェーダー', romaji: 'sheedaa' }, { japanese: 'ライティング', romaji: 'raitingu' },
+        { japanese: 'レンダリング', romaji: 'rendaringu' }, { japanese: 'かみのけ', romaji: 'kaminoke' },
+        { japanese: 'ひふ', romaji: 'hifu' }, { japanese: 'ふく', romaji: 'fuku' },
+        { japanese: 'めだま', romaji: 'medama' }, { japanese: 'かお', romaji: 'kao' },
+        { japanese: 'からだ', romaji: 'karada' }, { japanese: 'うで', romaji: 'ude' },
+        { japanese: 'あし', romaji: 'ashi' }, { japanese: 'てのひら', romaji: 'tenohira' },
+        { japanese: 'ゆび', romaji: 'yubi' }, { japanese: 'つめ', romaji: 'tsume' },
+        { japanese: 'ポーズ', romaji: 'poozu' }, { japanese: 'まゆげ', romaji: 'mayuge' }
+    ];
+
+    // CG Modeling Words (Katakana) - Full list from typing.html
+    const cgModelingWordsKatakana = [
+        { japanese: 'ユーブイ', romaji: 'yuubui' }, { japanese: 'ノーマルマップ', romaji: 'noomarumappu' },
+        { japanese: 'アンビエントオクルージョン', romaji: 'anbientookuruujon' }, { japanese: 'サブディビジョン', romaji: 'sabudibijon' },
+        { japanese: 'トランスフォーム', romaji: 'toransufoomu' }, { japanese: 'アーマチュア', romaji: 'aamachua' },
+        { japanese: 'キーフレーム', romaji: 'kiifureemu' }, { japanese: 'スカルプト', romaji: 'sukarupito' },
+        { japanese: 'ダイナミックトポロジー', romaji: 'dainamikkutoporojii' }, { japanese: 'ローポリ', romaji: 'roopori' },
+        { japanese: 'ハイポリ', romaji: 'haipori' }, { japanese: 'ピービーアール', romaji: 'piibiiaaru' },
+        { japanese: 'ブループリント', romaji: 'buruupurinto' }, { japanese: 'ノード', romaji: 'noodo' },
+        { japanese: 'エミッシブ', romaji: 'emisshibu' }, { japanese: 'ラフネス', romaji: 'rafunesu' },
+        { japanese: 'メタリック', romaji: 'metarikku' }, { japanese: 'コリジョン', romaji: 'korijon' },
+        { japanese: 'パーティクル', romaji: 'paatikuru' }, { japanese: 'プロシージャル', romaji: 'puroshijaru' },
+        { japanese: 'ベクター', romaji: 'bekutaa' }, { japanese: 'クォータニオン', romaji: 'kuootanion' },
+        { japanese: 'シェイプキー', romaji: 'sheipukii' }, { japanese: 'コンポジット', romaji: 'konpojitto' },
+        { japanese: 'デバッグ', romaji: 'debaggu' }, { japanese: 'ビルド', romaji: 'birudo' },
+        { japanese: 'アセット', romaji: 'asetto' }, { japanese: 'ワイヤーフレーム', romaji: 'waiaafureemu' },
+        { japanese: 'シーン', romaji: 'shiin' }, { japanese: 'オブジェクト', romaji: 'obujekuto' },
+        { japanese: 'モディファイア', romaji: 'modifuaia' }, { japanese: 'ピクセル', romaji: 'pikuseru' },
+        { japanese: 'ブーリアン', romaji: 'buurian' }, { japanese: 'カーソル', romaji: 'kaasoru' },
+        { japanese: 'グリッド', romaji: 'guriddo' }, { japanese: 'イージング', romaji: 'iijingu' },
+        { japanese: 'カーブ', romaji: 'kaabu' }, { japanese: 'デプス', romaji: 'depusu' },
+        { japanese: 'アルファ', romaji: 'arufa' }, { japanese: 'ブラー', romaji: 'buraa' },
+        { japanese: 'カリング', romaji: 'karingu' }, { japanese: 'デカール', romaji: 'dekaaru' },
+        { japanese: 'エフェクト', romaji: 'efekuto' }, { japanese: 'フィルタ', romaji: 'firuta' },
+        { japanese: 'ギズモ', romaji: 'gizumo' }, { japanese: 'ハイトマップ', romaji: 'haitomappu' },
+        { japanese: 'イラディアンス', romaji: 'iradeiansu' }, { japanese: 'レイヤー', romaji: 'reiyaa' },
+        { japanese: 'マッピング', romaji: 'mappingu' }, { japanese: 'ミップマップ', romaji: 'mippumappu' },
+        { japanese: 'オクルージョン', romaji: 'okuruujon' }, { japanese: 'パースペクティブ', romaji: 'paasupekutibu' },
+        { japanese: 'プリミティブ', romaji: 'purimitibu' }, { japanese: 'リフレクション', romaji: 'rifurekushon' },
+        { japanese: 'スケール', romaji: 'sukeeru' }, { japanese: 'タイル', romaji: 'tairu' },
+        { japanese: 'ビューポート', romaji: 'byuupooto' }
+    ];
+
+    // Initialize Hiragana word lists dynamically
+    const vroidWordsHiragana = [];
+    const cgModelingWordsHiragana = [];
+
+    vroidWords.forEach(w => vroidWordsHiragana.push({ japanese: katakanaToHiragana(w.japanese), romaji: w.romaji }));
+    cgModelingWordsKatakana.forEach(w => cgModelingWordsHiragana.push({ japanese: katakanaToHiragana(w.japanese), romaji: w.romaji }));
+
+    let allKatakanaWords = [];
+    let allHiraganaWords = [];
+
+    let gameState = GAME_STATES.MENU;
+    let score = 0;
+    let timeLeft = GAME_DURATIONS.normal;
+    let lastSpawnTime = 0;
+    let difficulty = 'normal';
+    let wordMode = 'katakana';
+    let combo = 0;
+    let maxCombo = 0;
+    let virtualKeyboard = [];
+    let tutorialStep = 0;
+    let isVirtualKeyboardVisible = false;
+    let isMobile = false;
+    let gameStats = { wordsTyped: 0, totalKeystrokes: 0, correctKeystrokes: 0, totalCharsTyped: 0, correctCharsTyped: 0 };
+
+    let sounds = {
+        type: null, correct: null, word_complete: null, wrong: null,
+        combo_increase: null, combo_break: null, click: null, bgm: null
+    };
+    let highScores = { easy: 0, normal: 0, hard: 0 };
+
+    // Visual Keyboard Overlay
+    let keyboardOverlay = {
+        layout: [
+            ['q','w','e','r','t','y','u','i','o','p'],
+            ['a','s','d','f','g','h','j','k','l'],
+            ['z','x','c','v','b','n','m']
+        ],
+        keyStates: {}, // To store highlight time for each key
+        keyWidth: 0, keyHeight: 0, startX: 0, startY: 0, padding: 2,
+        highlightDuration: 15 // frames
+    };
+
+    // Screen Shake Effect
+    let screenShakeTime = 0;
+    let screenShakeMagnitude = 0;
+
+    function triggerScreenShake(duration = 10, magnitude = 3) {
+        screenShakeTime = duration;
+        screenShakeMagnitude = magnitude;
+    }
+
+    class Button {
+        constructor(x, y, w, h, text, action, icon = null) {
+            this.x = x; this.y = y; this.w = w; this.h = h;
+            this.text = text; this.action = action; this.icon = icon;
+        }
+        isClicked(px, py) {
+            return px >= this.x && px <= this.x + this.w && py >= this.y && py <= this.y + this.h;
+        }
+        draw(isSelected = false, customColor = null) {
+            let buttonColor = customColor ? customColor : (isSelected ? p.color(255, 220, 100, 240) : p.color(255, 255, 255, 220));
+            p.fill(buttonColor);
+            p.stroke(100); p.strokeWeight(2);
+            p.rect(this.x, this.y, this.w, this.h, 10);
+            p.fill(50); p.textAlign(p.CENTER, p.CENTER);
+            let textSize = Math.min(this.h * 0.4, 24);
+            if (this.icon) textSize = Math.min(this.h * 0.5, 30);
+            p.textSize(textSize);
+            p.text(this.icon ? this.icon : this.text, this.x + this.w / 2, this.y + this.h / 2);
+        }
+    }
+
+    class ToggleButton extends Button {
+        constructor(x, y, w, h, textOn, textOff, isOn, action) {
+            super(x, y, w, h, isOn ? textOn : textOff, action);
+            this.textOn = textOn; this.textOff = textOff; this.isOn = isOn;
+        }
+        toggle() {
+            this.isOn = !this.isOn;
+            this.text = this.isOn ? this.textOn : this.textOff;
+            if (typeof this.action === 'function') this.action.call(this);
+        }
+        draw() {
+            let buttonColor = this.isOn ? p.color(100, 255, 100, 220) : p.color(255, 100, 100, 220);
+            super.draw(false, buttonColor);
+        }
+    }
+
+    class Word {
+        constructor(wordData) {
+            this.japanese = wordData.japanese; this.romaji = wordData.romaji;
+            this.x = p.random(p.textWidth(this.japanese) + 50, width - (p.textWidth(this.japanese) + 50));
+            this.y = -50;
+            this.baseSpeed = WORD_FALL_SPEEDS[difficulty];
+            this.speedRandomComponent = p.random(-0.1, 0.15);
+            this.typedLength = 0; this.missTyped = false; this.highlightTime = 0;
+            this.isActive = true; this.isCleared = false; this.alpha = 255;
+        }
+
+        update() {
+            if (!this.isActive) return;
+
+            if (this.isCleared) { // Word cleared, animate out
+                this.alpha -= 25; // Fade out
+                this.y -= 2;      // Move up slightly
+                if (this.alpha <= 0) this.isActive = false;
+                return;
+            }
+
+            let currentSpeed = this.baseSpeed * (difficulty === 'hard' ? 1.2 : 1) + this.speedRandomComponent;
+            this.y += currentSpeed;
+
+            if (this.highlightTime > 0) this.highlightTime--;
+            if (this.y > height + 50) {
+                 this.isActive = false;
+                 if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
+                    if (combo > 0) playSound(sounds.combo_break);
+                    combo = 0;
+                 }
+            }
+        }
+
+        draw() {
+            if (!this.isActive) return;
+            let currentAlpha = this.isCleared ? this.alpha : (this.missTyped ? 180 : 220);
+            let bgColor = this.highlightTime > 0 ? p.color(255, 255, 150, currentAlpha) : p.color(255, 255, 255, currentAlpha);
+            p.fill(bgColor);
+            p.stroke(100, currentAlpha); p.strokeWeight(2);
+            const rectWidth = Math.max(150, p.textWidth(this.japanese) + 40, p.textWidth(this.romaji) + 40);
+            p.rect(this.x - 10, this.y - 25, rectWidth, 50, 10);
+
+            p.fill(50, this.alpha); p.textAlign(p.LEFT);
+            p.textSize(16); p.text(this.japanese, this.x, this.y - 5);
+
+            p.textSize(14);
+            if (this.typedLength > 0) {
+                p.fill(0, 150, 0, this.alpha);
+                p.text(this.romaji.substring(0, this.typedLength), this.x, this.y + 15);
+            }
+            p.fill(this.missTyped ? p.color(200,0,0, this.alpha) : p.color(50, this.alpha));
+            let typedWidth = p.textWidth(this.romaji.substring(0, this.typedLength));
+            p.text(this.romaji.substring(this.typedLength), this.x + typedWidth, this.y + 15);
+        }
+
+        isFullyTypedBy(input) { return !this.isCleared && this.romaji === input; }
+
+        updateStateFromInput(input) {
+            if (this.isCleared) return;
+            if (this.romaji.startsWith(input)) {
+                this.missTyped = false; this.highlightTime = 5; this.typedLength = input.length;
+            } else {
+                let i = 0;
+                while (i < input.length && i < this.romaji.length && input[i] === this.romaji[i]) i++;
+                this.typedLength = i;
+                this.missTyped = input.length > i;
+                this.highlightTime = 0;
+            }
+        }
+        
+        markCleared() {
+            this.isCleared = true;
+        }
+    }
+
+    class Particle {
+        constructor(x, y, pColor) {
+            this.x = x; this.y = y;
+            this.vx = p.random(-4, 4); this.vy = p.random(-5, 1);
+            this.life = p.random(20, 40); this.maxLife = this.life;
+            this.size = p.random(5, 12);
+            this.color = pColor || p.color(p.random(200,255), p.random(180,220), p.random(0,100)); // Gold/Orange tones
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy;
+            this.vy += 0.2; this.life--;
+            this.vx *= 0.98; // air resistance
+        }
+        draw() {
+            let alpha = p.map(this.life, 0, this.maxLife, 0, 255);
+            p.fill(p.red(this.color), p.green(this.color), p.blue(this.color), alpha);
+            p.noStroke(); p.ellipse(this.x, this.y, this.size, this.size);
+        }
+        isDead() { return this.life <= 0; }
+    }
+
+    const menuButtons = []; const difficultySettingButtons = []; const modeSettingButtons = [];
+    const settingsScreenButtons = []; const pauseMenuButtons = [];
+    let gameplayPauseButton;
+
+    function createButtons() {
+        const buttonWidth = Math.min(300, width - 40);
+        const buttonHeight = Math.min(60, height / 10);
+        const centerX = width / 2 - buttonWidth / 2;
+        const itemSpacing = buttonHeight + 10;
+
+        menuButtons.length = 0;
+        menuButtons.push(new Button(centerX, height / 2 - buttonHeight * 2.5, buttonWidth, buttonHeight, "スタート", () => { startGame(); }));
+        menuButtons.push(new Button(centerX, height / 2 - buttonHeight * 1.25, buttonWidth, buttonHeight, "チュートリアル", () => { startTutorial(); }));
+        menuButtons.push(new Button(centerX, height / 2, buttonWidth, buttonHeight, "設定", () => { gameState = GAME_STATES.SETTINGS; }));
+        menuButtons.push(new Button(centerX, height / 2 + buttonHeight * 1.25, buttonWidth, buttonHeight, "ハイスコア", () => { gameState = GAME_STATES.HIGHSCORES; }));
+
+        let currentY = height / 3 - buttonHeight * 1.5;
+        modeSettingButtons.length = 0;
+        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "カタカナモード", () => { wordMode = 'katakana'; })); currentY += itemSpacing;
+        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ひらがなモード", () => { wordMode = 'hiragana'; })); currentY += itemSpacing;
+        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ミックスモード", () => { wordMode = 'mixed'; })); currentY += itemSpacing * 1.5;
+
+        difficultySettingButtons.length = 0;
+        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "かんたん", () => { difficulty = 'easy'; })); currentY += itemSpacing;
+        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ふつう", () => { difficulty = 'normal'; })); currentY += itemSpacing;
+        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "むずかしい", () => { difficulty = 'hard'; })); currentY += itemSpacing * 1.5;
+
+        settingsScreenButtons.length = 0;
+        const soundToggle = new ToggleButton(centerX, currentY, buttonWidth, buttonHeight, "サウンド: オン", "サウンド: オフ", soundEnabled,
+            function() {
+                soundEnabled = this.isOn;
+                if (sounds.bgm) {
+                    if (soundEnabled && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) && !bgmPlaying) playBackgroundMusic();
+                    else if (!soundEnabled && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
+                }
+            }
+        );
+        settingsScreenButtons.push(soundToggle); currentY += itemSpacing;
+        settingsScreenButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "もどる", () => { gameState = GAME_STATES.MENU; }));
+
+        pauseMenuButtons.length = 0;
+        const pauseButtonWidth = Math.min(250, width - 60); const pauseButtonHeight = Math.min(50, height / 12);
+        const pauseCenterX = width / 2 - pauseButtonWidth / 2; let pauseY = height / 2 - pauseButtonHeight * 1.5 - 10;
+        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "ゲーム再開", () => { resumeGame(); })); pauseY += pauseButtonHeight + 15;
+        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "リトライ", () => { retryGame(); })); pauseY += pauseButtonHeight + 15;
+        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "メニューに戻る", () => { returnToMenu(); }));
+
+        const gpButtonSize = Math.min(50, width/15, height/15);
+        gameplayPauseButton = new Button(width - gpButtonSize - 15, 15, gpButtonSize, gpButtonSize, "", () => { pauseGame(); }, "||");
+    }
+
+    function createVirtualKeyboard() {
+        virtualKeyboard = []; 
+        const keys = [
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+            ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+        ];
+        const keySize = Math.min(width / 11, 45);
+        const padding = Math.max(2, keySize * 0.05);
+        const totalKeyboardHeight = (keySize + padding) * 4.5; 
+        const startY = height - totalKeyboardHeight;
+
+        for (let row = 0; row < keys.length; row++) {
+            const numKeysInRow = keys[row].length;
+            const rowWidth = numKeysInRow * keySize + (numKeysInRow - 1) * padding;
+            let startX = (width - rowWidth) / 2;
+            for (let col = 0; col < numKeysInRow; col++) {
+                virtualKeyboard.push({
+                    key: keys[row][col], x: startX + col * (keySize + padding),
+                    y: startY + row * (keySize + padding), width: keySize, height: keySize,
+                    label: keys[row][col].toUpperCase()
+                });
+            }
+        }
+        const specialKeyHeight = keySize; const backspaceWidth = keySize * 1.8;
+        const clearKeyWidth = width * 0.6; const spacebarY = startY + keys.length * (keySize + padding) + padding;
+        
+        let lastKeyInThirdRow = virtualKeyboard[virtualKeyboard.length-1]; // 'm' key
+        virtualKeyboard.push({
+            key: 'backspace', label: '←',
+            x: lastKeyInThirdRow.x + keySize + padding, 
+            y: lastKeyInThirdRow.y,
+            width: backspaceWidth, height: specialKeyHeight
+        });
+        virtualKeyboard.push({
+            key: 'clear', label: '消去', x: (width - clearKeyWidth) / 2, y: spacebarY,
+            width: clearKeyWidth, height: specialKeyHeight
+        });
+    }
+
+    function initKeyboardOverlay() {
+        keyboardOverlay.keyWidth = Math.max(25, width / 25);
+        keyboardOverlay.keyHeight = keyboardOverlay.keyWidth;
+        keyboardOverlay.padding = Math.max(2, keyboardOverlay.keyWidth * 0.1);
+        const firstRowWidth = keyboardOverlay.layout[0].length * (keyboardOverlay.keyWidth + keyboardOverlay.padding) - keyboardOverlay.padding;
+        keyboardOverlay.startX = (width - firstRowWidth) / 2;
+        keyboardOverlay.startY = height - (keyboardOverlay.layout.length * (keyboardOverlay.keyHeight + keyboardOverlay.padding) + keyboardOverlay.keyHeight * 0.5); // Position higher
+    }
+    
+    function playSound(soundObj, volume = 1.0) {
+        if (soundEnabled && soundObj) {
+            soundObj.volume = volume;
+            soundObj.currentTime = 0; 
+            soundObj.play().catch(e => console.warn(`Error playing sound ${soundObj.src || 'unknown'}:`, e));
+        }
+    }
+
+    function loadSound(path, defaultVolume = 1.0) {
+        try {
+            const audio = new Audio(path);
+            audio.volume = defaultVolume;
+            audio.onerror = () => {
+                console.warn(`Sound not loaded or error: ${path}. Game will run without this sound.`);
+                for (let key in sounds) { 
+                    if (sounds[key] && sounds[key].src && sounds[key].src.endsWith(path)) {
+                        sounds[key] = null; break;
+                    }
+                }
+            };
+            return audio;
+        } catch (e) {
+            console.warn(`Could not attempt to load sound ${path}: ${e}`);
+            return null;
+        }
+    }
+
+    function loadSounds() {
+        sounds.type = loadSound('sounds/type.mp3', 0.7);
+        sounds.correct = loadSound('sounds/correct.mp3', 0.6);
+        sounds.word_complete = loadSound('sounds/word_complete.mp3', 0.8);
+        sounds.wrong = loadSound('sounds/wrong.mp3', 0.7);
+        sounds.combo_increase = loadSound('sounds/combo_increase.mp3', 0.8);
+        sounds.combo_break = loadSound('sounds/combo_break.mp3', 0.7);
+        sounds.click = loadSound('sounds/click.mp3', 0.5);
+        sounds.bgm = loadSound('sounds/bgm.mp3', 0.2);
+        if (sounds.bgm) sounds.bgm.loop = true;
+    }
+
+    function startGame(isRetry = false) {
+        gameState = GAME_STATES.PLAYING; isGamePausedManually = false; p.loop();
+        score = 0; timeLeft = GAME_DURATIONS[difficulty];
+        words = []; particles = []; currentInput = '';
+        lastSpawnTime = p.millis(); combo = 0; maxCombo = 0;
+        gameStats = { wordsTyped: 0, totalKeystrokes: 0, correctKeystrokes: 0, totalCharsTyped: 0, correctCharsTyped: 0 };
+        playSound(sounds.click);
+        if (soundEnabled && sounds.bgm && !bgmPlaying) playBackgroundMusic();
+        startTimer();
+    }
+
+    function startTutorial() {
+        difficulty = 'tutorial'; wordMode = 'katakana'; tutorialStep = 0;
+        startGame(); gameState = GAME_STATES.TUTORIAL;
+    }
+
+    function pauseGame() {
+        if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
+            isGamePausedManually = true; gameState = GAME_STATES.PAUSED;
+            if (sounds.bgm && bgmPlaying) sounds.bgm.pause();
+            p.noLoop();
+        }
+    }
+    function resumeGame() {
+        if (gameState === GAME_STATES.PAUSED && isGamePausedManually) {
+            isGamePausedManually = false;
+            gameState = (difficulty === 'tutorial' && tutorialStep < 3) ? GAME_STATES.TUTORIAL : GAME_STATES.PLAYING;
+            if (soundEnabled && sounds.bgm && !bgmPlaying) playBackgroundMusic();
+            p.loop();
+        }
+    }
+    function retryGame() {
+        if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); sounds.bgm.currentTime = 0; bgmPlaying = false; }
+        startGame(true);
+    }
+    function returnToMenu() {
+        if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
+        gameState = GAME_STATES.MENU; isGamePausedManually = false; p.loop(); stopTimer();
+    }
+
+    p.setup = function() {
+        width = p.windowWidth; height = p.windowHeight;
+        p.createCanvas(width, height); p.textFont('Meiryo, Arial');
+        
+        // Consolidate all words
+        allKatakanaWords = [...vroidWords, ...cgModelingWordsKatakana];
+        allHiraganaWords = [...vroidWordsHiragana, ...cgModelingWordsHiragana];
+        
+        loadSounds();
+        isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        loadHighScores();
+        createButtons();
+        if (isMobile) createVirtualKeyboard();
+        initKeyboardOverlay(); 
+    };
+
+    function startTimer() {
+        stopTimer();
+        gameTimerInterval = setInterval(() => {
+            if (!isGamePausedManually && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
+                if (timeLeft > 0) timeLeft--;
+                if (timeLeft <= 0) {
+                    gameState = GAME_STATES.RESULTS;
+                    if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
+                    if (difficulty !== 'tutorial') checkAndSaveHighScore();
+                    stopTimer(); p.noLoop();
+                }
+            }
+        }, 1000);
+    }
+    function stopTimer() { if (gameTimerInterval) { clearInterval(gameTimerInterval); gameTimerInterval = null; } }
+    
+    function loadHighScores() {
+         try {
+            const savedScores = localStorage.getItem('cgTypingHighScores_NEO'); 
+            if (savedScores) {
+                highScores = JSON.parse(savedScores);
+                if (highScores.easy == null) highScores.easy = 0; 
+                if (highScores.normal == null) highScores.normal = 0;
+                if (highScores.hard == null) highScores.hard = 0;
+            } else highScores = { easy: 0, normal: 0, hard: 0 };
+        } catch (e) { console.error("Error loading high scores:", e); highScores = { easy: 0, normal: 0, hard: 0 }; }
+    }
+
+    p.draw = function() {
+        p.background(102, 126, 234); 
+        for(let i = 0; i < height; i++) {
+            let inter = p.map(i, 0, height, 0, 1);
+            let c1 = p.color(102, 126, 234); let c2 = p.color(118, 75, 162);
+            let c = p.lerpColor(c1, c2, inter); p.stroke(c); p.line(0, i, width, i);
+        }
+        p.noStroke();
+
+        p.push();
+        if (screenShakeTime > 0 && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
+            const sx = p.random(-screenShakeMagnitude, screenShakeMagnitude);
+            const sy = p.random(-screenShakeMagnitude, screenShakeMagnitude);
+            p.translate(sx, sy);
+            screenShakeTime--;
+        }
+
+        if (gameState === GAME_STATES.MENU) drawMenu();
+        else if (gameState === GAME_STATES.SETTINGS) drawSettings();
+        else if (gameState === GAME_STATES.HIGHSCORES) drawHighScores();
+        else if (gameState === GAME_STATES.PLAYING) drawGameScreen();
+        else if (gameState === GAME_STATES.TUTORIAL) drawTutorialScreen();
+        else if (gameState === GAME_STATES.PAUSED) { p.pop(); drawPauseScreen(); } 
+        else if (gameState === GAME_STATES.RESULTS) { p.pop(); drawResultsScreen(); } 
+        else { p.pop(); } 
+        
+        if (gameState !== GAME_STATES.PAUSED && gameState !== GAME_STATES.RESULTS) {
+             p.pop(); 
+        }
+
+        if (!isMobile && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
+            drawKeyboardOverlay();
+        }
+        for (let key in keyboardOverlay.keyStates) {
+            if (keyboardOverlay.keyStates[key] > 0) keyboardOverlay.keyStates[key]--;
+        }
+    };
+    
+    function drawKeyboardOverlay() {
+        let currentY = keyboardOverlay.startY;
+        for (let r = 0; r < keyboardOverlay.layout.length; r++) {
+            let row = keyboardOverlay.layout[r];
+            let rowWidth = row.length * (keyboardOverlay.keyWidth + keyboardOverlay.padding) - keyboardOverlay.padding;
+            let currentX = (width - rowWidth) / 2 + (r === 1 ? keyboardOverlay.keyWidth * 0.25 : (r === 2 ? keyboardOverlay.keyWidth * 0.5 : 0)); 
+
+            for (let keyChar of row) {
+                const isHighlighted = keyboardOverlay.keyStates[keyChar] && keyboardOverlay.keyStates[keyChar] > 0;
+                p.fill(isHighlighted ? p.color(255, 255, 0, 200) : p.color(50, 50, 50, 150));
+                p.stroke(200, 150); p.strokeWeight(1);
+                p.rect(currentX, currentY, keyboardOverlay.keyWidth, keyboardOverlay.keyHeight, 3);
+                
+                p.fill(255, 200); p.noStroke(); p.textAlign(p.CENTER, p.CENTER);
+                p.textSize(keyboardOverlay.keyHeight * 0.5);
+                p.text(keyChar.toUpperCase(), currentX + keyboardOverlay.keyWidth / 2, currentY + keyboardOverlay.keyHeight / 2);
+                currentX += keyboardOverlay.keyWidth + keyboardOverlay.padding;
+            }
+            currentY += keyboardOverlay.keyHeight + keyboardOverlay.padding;
+        }
+    }
+
+    function drawGameScreen() {
+        if (p.millis() - lastSpawnTime > SPAWN_INTERVALS[difficulty]) {
+            let sourceWords = [];
+            if (wordMode === 'katakana') sourceWords = allKatakanaWords;
+            else if (wordMode === 'hiragana') sourceWords = allHiraganaWords;
+            else sourceWords = (p.random() < 0.5 ? allKatakanaWords : allHiraganaWords);
+            if (sourceWords.length > 0) words.push(new Word(p.random(sourceWords)));
+            lastSpawnTime = p.millis();
+        }
+
+        for (let i = words.length - 1; i >= 0; i--) {
+            words[i].update(); words[i].draw();
+            if (!words[i].isActive) words.splice(i, 1);
+        }
+        for (let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update(); particles[i].draw();
+            if (particles[i].isDead()) particles.splice(i, 1);
+        }
+        drawGamePlayUI();
+        drawInputArea();
+        if (isMobile && isVirtualKeyboardVisible) drawVirtualKeyboard();
+    }
+
+    function drawGamePlayUI() {
+        p.fill(255); p.textAlign(p.LEFT); p.textSize(24);
+        p.text('Score: ' + score, 20, 40);
+
+        if (combo > 1) {
+            let comboSize = p.map(combo, 2, 50, 20, 36, true); 
+            let R = p.map(combo, 2, 50, 255, 255, true); 
+            let G = p.map(combo, 2, 50, 255, 100, true);
+            let B = p.map(combo, 2, 50, 0, 0, true);
+            p.fill(R, G, B); p.textSize(comboSize);
+            p.text('Combo: ' + combo + 'x', 20, 70 + (comboSize > 20 ? (comboSize - 20)/2 : 0) ); 
+        }
+
+        p.fill(255); p.textAlign(p.RIGHT); p.textSize(24);
+        p.text('Time: ' + timeLeft, width - 20 - (gameplayPauseButton ? gameplayPauseButton.w + 10 : 0), 40);
+        if (gameplayPauseButton) gameplayPauseButton.draw();
+
+        p.textAlign(p.CENTER); p.textSize(16); p.fill(255,255,255,180);
+        const textYPos = height - (isMobile && isVirtualKeyboardVisible ? (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 + 70 : 80);
+        if (!isMobile) { 
+             const keyboardOverlayHeight = keyboardOverlay.layout.length * (keyboardOverlay.keyHeight + keyboardOverlay.padding) + keyboardOverlay.keyHeight * 0.5;
+             p.text('落下する単語のローマ字を入力！', width / 2, keyboardOverlay.startY - 30);
+        } else {
+             p.text('落下する単語のローマ字を入力！', width / 2, textYPos);
+        }
+    }
+
+    function drawInputArea() {
+        const inputAreaHeight = 40;
+        let inputAreaY;
+        if (isMobile && isVirtualKeyboardVisible) {
+            inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
+        } else if (!isMobile) {
+            inputAreaY = keyboardOverlay.startY - inputAreaHeight - 10;
+        } else {
+            inputAreaY = height - inputAreaHeight - 20;
+        }
+        p.fill(255, 255, 255, 200); p.stroke(100); p.strokeWeight(2);
+        p.rect(width / 2 - 150, inputAreaY, 300, inputAreaHeight, 10);
+        p.fill(50); p.textAlign(p.CENTER, p.CENTER); p.textSize(18);
+        p.text(currentInput, width / 2, inputAreaY + inputAreaHeight / 2);
+    }
+
+    function drawVirtualKeyboard() {
+        for (const key of virtualKeyboard) {
+            p.fill(230, 230, 230, 220); p.stroke(150); p.strokeWeight(1);
+            p.rect(key.x, key.y, key.width, key.height, 5);
+            p.fill(30); p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(Math.min(key.width, key.height) * 0.45);
+            p.text(key.label || key.key.toUpperCase(), key.x + key.width / 2, key.y + key.height / 2);
+        }
+    }
+    function drawMenu() {
+        p.fill(255); p.textAlign(p.CENTER);
+        p.textSize(Math.min(36, width / 10)); p.text('CGモデリング', width / 2, height / 4 - 40);
+        p.textSize(Math.min(32, width / 12)); p.text('タイピングゲーム NEO', width / 2, height / 4);
+        p.textSize(12); p.textAlign(p.RIGHT); p.fill(255, 255, 255, 150);
+        p.text(GAME_VERSION, width - 10, height - 10);
+
+        p.textSize(18);
+        let modeText = wordMode === 'katakana' ? 'カタカナ' : (wordMode === 'hiragana' ? 'ひらがな' : 'ミックス');
+        let diffText = difficulty === 'easy' ? 'かんたん' : (difficulty === 'normal' ? 'ふつう' : (difficulty === 'hard' ? 'むずかしい' : 'チュートリアル'));
+        p.fill(255); p.textAlign(p.CENTER);
+        p.text(`モード: ${modeText} / 難易度: ${diffText}`, width / 2, height / 4 + 50);
+        for (const button of menuButtons) button.draw();
+    }
+    function drawSettings() {
+        p.fill(255); p.textAlign(p.CENTER, p.TOP);
+        p.textSize(Math.min(32, width/12)); p.text('設定', width / 2, height / 8);
+        const drawSettingButtonWithSelection = (button, isSelected) => button.draw(isSelected);
+        
+        p.fill(255); p.textSize(20); p.textAlign(p.CENTER);
+        if (modeSettingButtons.length > 0) p.text("表示モード", width/2, modeSettingButtons[0].y - 35);
+        for (const button of modeSettingButtons) {
+            drawSettingButtonWithSelection(button,
+                (button.text.includes('カタカナ') && wordMode === 'katakana') ||
+                (button.text.includes('ひらがな') && wordMode === 'hiragana') ||
+                (button.text.includes('ミックス') && wordMode === 'mixed')
+            );
+        }
+        if (difficultySettingButtons.length > 0) p.text("難易度", width/2, difficultySettingButtons[0].y - 35);
+        for (const button of difficultySettingButtons) {
+            drawSettingButtonWithSelection(button,
+                (button.text === 'かんたん' && difficulty === 'easy') ||
+                (button.text === 'ふつう' && difficulty === 'normal') ||
+                (button.text === 'むずかしい' && difficulty === 'hard')
+            );
+        }
+        for (const button of settingsScreenButtons) button.draw();
+    }
+    function drawPauseScreen() {
+        p.fill(0, 0, 0, 150); p.rect(0, 0, width, height);
+        p.fill(255); p.textAlign(p.CENTER); p.textSize(Math.min(32, width/10));
+        p.text('一時停止中', width / 2, height / 3);
+        for (const button of pauseMenuButtons) button.draw();
+    }
+    function calculatePerformanceMetrics() {
+        const gameDurationPlayed = GAME_DURATIONS[difficulty] - (gameState === GAME_STATES.RESULTS ? 0 : timeLeft);
+        const gameDurationMinutes = Math.max(1, gameDurationPlayed) / 60; 
+
+        if (gameDurationMinutes <= 0) return { wpm: 0, cpm: 0, accuracy: 0 };
+        const wpm = gameStats.correctCharsTyped > 0 ? Math.round((gameStats.correctCharsTyped / 5) / gameDurationMinutes) : 0;
+        const cpm = gameStats.correctCharsTyped > 0 ? Math.round(gameStats.correctCharsTyped / gameDurationMinutes) : 0;
+        const accuracy = gameStats.totalKeystrokes > 0 ? Math.round((gameStats.correctKeystrokes / gameStats.totalKeystrokes) * 100) : (gameStats.wordsTyped > 0 ? 100 : 0);
+        return { wpm, cpm, accuracy };
+    }
+    function drawResultsScreen() {
+        p.fill(0, 0, 0, 180); p.rect(0, 0, width, height);
+        p.fill(255); p.textAlign(p.CENTER);
+        p.textSize(Math.min(32, width/10)); p.text('結果発表', width / 2, height / 5);
+        const metrics = calculatePerformanceMetrics();
+        const isNewHighScore = (difficulty !== 'tutorial' && score > (highScores[difficulty] || 0));
+
+        p.textSize(Math.min(24, width/15)); let yPos = height / 5 + 60;
+        p.text('スコア: ' + score, width / 2, yPos); yPos += 40;
+        p.textSize(Math.min(20, width/18));
+        p.text('入力した単語数: ' + gameStats.wordsTyped, width / 2, yPos); yPos += 30;
+        p.text('最大コンボ: ' + maxCombo, width / 2, yPos); yPos += 30;
+        p.text('WPM (単語/分): ' + metrics.wpm, width / 2, yPos); yPos += 30;
+        p.text('CPM (文字/分): ' + metrics.cpm, width / 2, yPos); yPos += 30;
+        p.text('正確さ: ' + metrics.accuracy + '%', width / 2, yPos); yPos += 40;
+        if (isNewHighScore && difficulty !== 'tutorial') {
+            p.fill(255, 255, 0); p.textSize(Math.min(28, width/12));
+            p.text('新記録達成!', width / 2, yPos);
+        }
+        const buttonWidth = Math.min(250, width - 60); const buttonHeight = Math.min(50, height/12);
+        const resultsRetryButton = new Button(width/2 - buttonWidth/2, height * 0.75, buttonWidth, buttonHeight, 'もう一度プレイ', () => { p.loop(); retryGame(); });
+        const resultsMenuButton = new Button(width/2 - buttonWidth/2, height * 0.75 + buttonHeight + 15, buttonWidth, buttonHeight, 'メニューに戻る', () => { p.loop(); returnToMenu(); });
+        resultsRetryButton.draw(); resultsMenuButton.draw();
+    }
+    function drawHighScores() {
+        p.fill(255); p.textAlign(p.CENTER);
+        p.textSize(Math.min(32, width/10)); p.text('ハイスコア', width / 2, height / 4);
+        p.textSize(Math.min(24, width/15));
+        p.text('かんたん: ' + (highScores.easy || 0), width / 2, height / 4 + 70);
+        p.text('ふつう: ' + (highScores.normal || 0), width / 2, height / 4 + 110);
+        p.text('むずかしい: ' + (highScores.hard || 0), width / 2, height / 4 + 150);
+        const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+        const backButton = new Button(width/2 - buttonWidth/2, height/2 + 120, buttonWidth, buttonHeight, 'もどる', () => { gameState = GAME_STATES.MENU; });
+        backButton.draw();
+    }
+    function drawTutorialScreen() {
+        if (difficulty === 'tutorial') drawGameScreen();
+        p.fill(0,0,0,190); p.rect(0,0,width,height); 
+
+        p.fill(255); p.textAlign(p.CENTER);
+        p.textSize(Math.min(28, width/12)); p.text('チュートリアル', width / 2, height / 6);
+        p.textSize(Math.min(18, width / 23));
+        let tutorialText = [];
+        if (tutorialStep === 0) {
+            tutorialText = [
+                'タイピングゲームNEOへようこそ！',
+                '画面上から落ちてくる単語のローマ字を正確に入力します。',
+                '例:「ポリゴン」→「porigon」。画面下のキーボードが光って補助します(PC)。',
+                '（このチュートリアル中はカタカナモード・かんたん設定です）'
+            ];
+        } else if (tutorialStep === 1) {
+            tutorialText = [
+                '正確な入力でスコア獲得。連続成功でコンボボーナス！',
+                'タイプミスや単語を見逃すとコンボが途切れます (効果音あり)。',
+                '単語を完成させると効果音と共にエフェクトが発生します。',
+                '制限時間内にハイスコアを目指しましょう！'
+            ];
+        } else if (tutorialStep === 2) {
+             tutorialText = [
+                '設定で難易度や表示モード(カタカナ/ひらがな/ミックス)を変更可能。',
+                'サウンドのオン/オフも設定できます。ローカルに効果音ファイルが必要です。',
+                '準備ができたらメインメニューからスタート！健闘を祈ります！'
+            ];
+        } else { returnToMenu(); return; }
+
+        for(let i=0; i < tutorialText.length; i++) p.text(tutorialText[i], width / 2, height / 3 + i * 35);
+        const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+        const nextButtonText = tutorialStep < 2 ? '次へ' : 'メニューへ';
+        const tutorialNextButton = new Button(width/2 - buttonWidth/2, height * 3/4 + 30, buttonWidth, buttonHeight, nextButtonText, () => {
+            if (tutorialStep < 2) {
+                tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = []; }
+            } else returnToMenu();
+        });
+        tutorialNextButton.draw();
+    }
+
+    function checkWordMatch() {
+        let wordMatchedThisFrame = null;
+        for (let i = words.length - 1; i >= 0; i--) {
+            if (words[i].isFullyTypedBy(currentInput)) {
+                wordMatchedThisFrame = words[i];
+                score += wordMatchedThisFrame.romaji.length * 10 * (Math.max(1, combo));
+                gameStats.correctCharsTyped += wordMatchedThisFrame.romaji.length;
+                
+                const particleCount = p.random(25, 40);
+                const wordCenterX = wordMatchedThisFrame.x + p.textWidth(wordMatchedThisFrame.japanese) / 2;
+                for (let j = 0; j < particleCount; j++) {
+                    particles.push(new Particle(wordCenterX, wordMatchedThisFrame.y, p.color(p.random(200,255),p.random(150,255),50) ));
+                }
+                triggerScreenShake(12, 4); 
+                playSound(sounds.word_complete || sounds.correct); 
+                
+                gameStats.wordsTyped++; combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                if (combo > 0 && combo % 5 === 0) playSound(sounds.combo_increase);
+
+                wordMatchedThisFrame.markCleared(); 
+                if (difficulty === 'hard') timeLeft = Math.min(timeLeft + 1, GAME_DURATIONS.hard + 5);
+                currentInput = '';
+                break; 
+            }
+        }
+        for (const word of words) word.updateStateFromInput(currentInput);
+    }
+
+    function checkAndSaveHighScore() {
+        if (difficulty === 'tutorial') return false;
+        let isNewRecord = false;
+        if (score > (highScores[difficulty] || 0) ) {
+            highScores[difficulty] = score; isNewRecord = true;
+            try { localStorage.setItem('cgTypingHighScores_NEO', JSON.stringify(highScores)); }
+            catch (e) { console.error("Error saving high scores:", e); }
+        }
+        return isNewRecord;
+    }
+
+    function handleTypingInput(key) {
+        playSound(sounds.type);
+        currentInput += key.toLowerCase();
+        keyboardOverlay.keyStates[key.toLowerCase()] = keyboardOverlay.highlightDuration; 
+
+        gameStats.totalKeystrokes++; gameStats.totalCharsTyped++;
+        let isCorrectPrefixForAnyWord = false;
+        for (const word of words) {
+            if (!word.isCleared && word.romaji.startsWith(currentInput)) {
+                isCorrectPrefixForAnyWord = true; break;
+            }
+        }
+
+        if (isCorrectPrefixForAnyWord) gameStats.correctKeystrokes++;
+        else {
+            if (currentInput.length > 0) {
+                if (combo > 0) playSound(sounds.combo_break); 
+                combo = 0; playSound(sounds.wrong);
+            }
+        }
+        checkWordMatch();
+    }
+
+    p.keyPressed = function() {
+        if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
+            if (p.keyCode === p.ESCAPE) { pauseGame(); return false; }
+            if (!isMobile) {
+                if (p.keyCode === p.BACKSPACE) {
+                    currentInput = currentInput.slice(0, -1);
+                    for (const word of words) word.updateStateFromInput(currentInput);
+                } else if (p.key.length === 1 && p.key.match(/^[a-z0-9]$/i)) {
+                    handleTypingInput(p.key);
+                }
+                return false;
+            }
+        } else if (gameState === GAME_STATES.PAUSED) {
+            if (p.keyCode === p.ESCAPE) { resumeGame(); return false; }
+        }
+        return true;
+    };
+
+    p.mousePressed = function() {
+        const mouseX = p.mouseX; const mouseY = p.mouseY;
+        let buttonClickedSoundPlayed = false;
+
+        const generalButtonClick = () => {
+            if (!buttonClickedSoundPlayed) { playSound(sounds.click); buttonClickedSoundPlayed = true; }
+        };
+
+        if (gameState === GAME_STATES.MENU) {
+            for (const button of menuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
+        } else if (gameState === GAME_STATES.SETTINGS) {
+            for (const button of modeSettingButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
+            for (const button of difficultySettingButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
+            for (const button of settingsScreenButtons) {
+                if (button.isClicked(mouseX, mouseY)) {
+                    generalButtonClick(); 
+                    if (button instanceof ToggleButton) button.toggle(); else button.action();
+                    return false;
+                }
+            }
+        } else if (gameState === GAME_STATES.HIGHSCORES) {
+            const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+            const backButton = { x: width/2 - buttonWidth/2, y: height/2 + 120, w: buttonWidth, h: buttonHeight};
+            if (mouseX >= backButton.x && mouseX <= backButton.x + backButton.w && mouseY >= backButton.y && mouseY <= backButton.y + backButton.h) {
+                generalButtonClick(); gameState = GAME_STATES.MENU; return false;
+            }
+        } else if (gameState === GAME_STATES.TUTORIAL) {
+            if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
+            const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+            const nextButton = {x: width/2 - buttonWidth/2, y: height * 3/4 + 30, w: buttonWidth, h: buttonHeight};
+            if (mouseX >= nextButton.x && mouseX <= nextButton.x + nextButton.w && mouseY >= nextButton.y && mouseY <= nextButton.y + nextButton.h) {
+                generalButtonClick();
+                if (tutorialStep < 2) { tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = [];}} else returnToMenu();
+                return false;
+            }
+            handleMobileGameTouch(mouseX, mouseY);
+        } else if (gameState === GAME_STATES.PLAYING) {
+            if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
+            handleMobileGameTouch(mouseX, mouseY);
+        } else if (gameState === GAME_STATES.PAUSED) {
+            for (const button of pauseMenuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
+        } else if (gameState === GAME_STATES.RESULTS) {
+            p.loop(); 
+            const buttonWidth = Math.min(250, width - 60); const buttonHeight = Math.min(50, height/12);
+            const playAgainButton = {x: width/2 - buttonWidth/2, y: height * 0.75, w: buttonWidth, h: buttonHeight};
+            const menuButton = {x: width/2 - buttonWidth/2, y: height * 0.75 + buttonHeight + 15, w: buttonWidth, h: buttonHeight};
+            if (mouseX >= playAgainButton.x && mouseX <= playAgainButton.x + playAgainButton.w && mouseY >= playAgainButton.y && mouseY <= playAgainButton.y + playAgainButton.h) {
+                generalButtonClick(); retryGame(); return false;
+            }
+            if (mouseX >= menuButton.x && mouseX <= menuButton.x + menuButton.w && mouseY >= menuButton.y && mouseY <= menuButton.y + menuButton.h) {
+                generalButtonClick(); returnToMenu(); return false;
+            }
+        }
+        return true;
+    };
+
+    function handleMobileGameTouch(touchX, touchY) {
+        if (isMobile && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
+            const inputAreaHeight = 40; let inputAreaY;
+            if (isMobile && isVirtualKeyboardVisible) inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
+            else inputAreaY = height - inputAreaHeight - 20;
+            const inputAreaRect = { x: width / 2 - 150, y: inputAreaY, w: 300, h: inputAreaHeight };
+
+            if (touchX >= inputAreaRect.x && touchX <= inputAreaRect.x + inputAreaRect.w && touchY >= inputAreaRect.y && touchY <= inputAreaRect.y + inputAreaRect.h) {
+                isVirtualKeyboardVisible = !isVirtualKeyboardVisible; playSound(sounds.click); return false;
+            }
+            if (isVirtualKeyboardVisible) {
+                for (const key of virtualKeyboard) {
+                    if (touchX >= key.x && touchX <= key.x + key.width && touchY >= key.y && touchY <= key.y + key.height) {
+                        if (key.key === 'backspace') {
+                            currentInput = currentInput.slice(0, -1);
+                            for (const word of words) { word.updateStateFromInput(currentInput); }
+                        } else if (key.key === 'clear') {
+                            currentInput = ''; if (combo > 0) playSound(sounds.combo_break); combo = 0;
+                            for (const word of words) { word.updateStateFromInput(currentInput); }
+                        } else {
+                            handleTypingInput(key.key); 
+                        }
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    function playBackgroundMusic() {
+        if (!sounds.bgm || !soundEnabled || bgmPlaying) return;
+        sounds.bgm.play().then(() => { bgmPlaying = true; })
+                         .catch(e => { console.error("BGM play error:", e); bgmPlaying = false; });
+    }
+
+    p.windowResized = function() {
+        width = p.windowWidth; height = p.windowHeight;
+        p.resizeCanvas(width, height); createButtons();
+        if (isMobile) createVirtualKeyboard();
+        initKeyboardOverlay(); 
+    };
+};
+new p5(sketch);
+    </script>
+</body>
+</html>
