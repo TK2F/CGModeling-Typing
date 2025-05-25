@@ -1,5 +1,4 @@
 # CGモデリング タイピングゲーム NEO
-## (CG Modeling Typing Game NEO)
 
 **日本語** | [English](#english)
 
