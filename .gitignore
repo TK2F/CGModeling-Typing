@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbs
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+
+# Windows
+[Dd]esktop.ini
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Miscellaneous
+# 例えば、もしローカルでテスト用の証明書などを使っていた場合
+# *.pem
+# *.key
