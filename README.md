@@ -5,7 +5,7 @@
 ## 概要
 
 CGモデリングに関連する専門用語を題材にしたタイピング練習ゲームNEOです。
-HTMLとJavaScript (p5.jsライブラリ) を用いて作成。
+HTML、CSS (Tailwind CSS)、JavaScriptを用いて作成し、フォントにはGoogle Fonts (Orbitron, Noto Sans JP) を利用しています。
 楽しみながらタイピングスキルとCG用語の知識を深めることを目的としています。
 
 ## 主な機能
@@ -14,10 +14,10 @@ HTMLとJavaScript (p5.jsライブラリ) を用いて作成。
 * 表示モード: カタカナ、ひらがな、ミックスモード
 * コンボボーナス付きスコアリングシステム
 * タイプ成功時のパーティクルエフェクトと画面シェイクによるフィードバック強化
-* 物理キーボードユーザー向けのQWERTYキーボードオーバーレイ表示 (PC)
+* 画面下部に表示されるインタラクティブなサイバーキーボード（QWERTY配列ベース）
 * モバイルデバイス向けの仮想キーボード搭載
 * 効果音とBGM (設定画面でオン/オフ切り替え可能)
-* ローカル環境へのハイスコア保存機能
+* ローカル環境へのハイスコアや設定、進捗の保存機能
 * レスポンシブデザイン
 
 ## 遊び方
@@ -44,7 +44,9 @@ HTMLとJavaScript (p5.jsライブラリ) を用いて作成。
 
 ## ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE.md](LICENSE.md)ファイルをご覧ください。
+このプロジェクトのソフトウェアコード部分はMITライセンスの下で公開されています。
+ゲーム内で使用されている背景音楽（BGM）および効果音（SFX）は、MITライセンスの対象外であり、それぞれの提供元の利用規約に従います。
+詳細は[LICENSE.md](LICENSE.md)ファイルをご覧ください。
 
 ---
 
@@ -54,7 +56,7 @@ HTMLとJavaScript (p5.jsライブラリ) を用いて作成。
 ### Overview
 
 This is "CG Modeling Typing Game NEO," a typing practice game themed around CG modeling terminology.
-It was developed using HTML and JavaScript (with the p5.js library).
+It was developed using HTML, CSS (Tailwind CSS), and JavaScript, utilizing Google Fonts (Orbitron, Noto Sans JP).
 The aim is to improve typing skills and familiarity with CG terms in an enjoyable way.
 
 ### Features
@@ -63,10 +65,10 @@ The aim is to improve typing skills and familiarity with CG terms in an enjoyabl
 * Word display modes: Katakana, Hiragana, Mixed mode
 * Scoring system with combo bonuses
 * Enhanced feedback with particle effects and screen shake on successful typing
-* On-screen QWERTY keyboard overlay for physical keyboard users (PC)
+* Interactive on-screen cyber keyboard (QWERTY-based) displayed at the bottom of the screen
 * Virtual keyboard for mobile devices
 * Sound effects and background music (toggleable in settings)
-* Local high score saving
+* Local saving for high scores, settings, and progress
 * Responsive design
 
 ### How to Play
@@ -93,4 +95,8 @@ We sincerely apologize for any inconvenience this may cause and appreciate your 
 
 ### License
 
-This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
+The software code of this project is licensed under the MIT License.
+The background music (BGM) and sound effects (SFX) used within the game are not covered by the MIT License and are subject to the terms of use of their respective providers.
+See the [LICENSE.md](LICENSE.md) file for details.
+
+---
