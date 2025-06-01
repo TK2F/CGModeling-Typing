@@ -3,13 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CGモデリング タイピングゲーム NEO - Ultimate Edition</title>
+    <title>CGモデリング タイピングゲーム NEO v4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
         
         * {
             font-family: 'Noto Sans JP', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            overscroll-behavior: none;
+            touch-action: manipulation;
         }
         
         .game-gradient {
@@ -43,28 +49,6 @@
         @keyframes combo-pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
-        }
-        
-        .flick-key {
-            position: relative;
-            transition: all 0.15s ease;
-        }
-        
-        .flick-key:active {
-            transform: scale(0.95);
-            background-color: rgba(59, 130, 246, 0.3);
-        }
-        
-        .flick-hints {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .flick-key:active .flick-hints {
-            opacity: 1;
         }
         
         .stats-card {
@@ -102,10 +86,90 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+
+        .flick-key {
+            position: relative;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
         
+        .flick-key:active {
+            transform: scale(0.95);
+            background-color: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        .key-btn {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .key-btn:active {
+            transform: scale(0.95);
+            background-color: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* スマホ対応 */
         @media (max-width: 768px) {
             .mobile-optimized {
                 padding: 0.5rem;
+            }
+            
+            .game-container {
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            .keyboard-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 50;
+            }
+            
+            .words-area {
+                height: calc(100vh - 200px);
+                overflow: hidden;
+            }
+        }
+
+        .word-card {
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .word-card.completed {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+        
+        .word-card.error {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border: 2px solid rgba(239, 68, 68, 0.5);
+        }
+
+        /* 入力表示の改善 */
+        .input-display {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* キーボードフォーカス表示 */
+        button:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        /* アクセシビリティ */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
@@ -115,63 +179,66 @@
     <div id="gameContainer" class="relative w-full h-screen overflow-hidden">
         
         <!-- メインメニュー画面 -->
-        <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center">
+        <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center p-4">
             <div class="text-center mb-8">
-                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                <h1 class="text-3xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
                     CGモデリング
                 </h1>
-                <h2 class="text-2xl md:text-4xl font-medium text-white/90 mb-2">
+                <h2 class="text-xl md:text-4xl font-medium text-white/90 mb-2">
                     タイピングゲーム NEO
                 </h2>
-                <p class="text-lg text-white/80 font-light">Ultimate Edition v4.0</p>
+                <p class="text-sm md:text-lg text-white/80 font-light">v4.0</p>
             </div>
             
             <!-- 現在の設定表示 -->
             <div class="stats-card rounded-lg p-4 mb-6 text-white text-center">
-                <p class="text-sm opacity-90">
+                <p class="text-xs md:text-sm opacity-90">
                     <span id="currentMode">カタカナ</span> / 
                     <span id="currentDifficulty">ふつう</span>
                 </p>
             </div>
             
             <!-- メニューボタン -->
-            <div class="flex flex-col gap-4 w-80 max-w-full px-4">
-                <button id="startGame" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+            <div class="flex flex-col gap-3 w-full max-w-xs">
+                <button id="startGame" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
                     ゲームスタート
                 </button>
-                <button id="tutorialBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                <button id="tutorialBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
                     チュートリアル
                 </button>
-                <button id="settingsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                <button id="settingsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
                     設定
                 </button>
-                <button id="statisticsBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                <button id="statisticsBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
                     統計・履歴
+                </button>
+                <button id="creditsBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                    クレジット
                 </button>
             </div>
         </div>
         
         <!-- ゲーム画面 -->
-        <div id="gameScreen" class="absolute inset-0 hidden">
+        <div id="gameScreen" class="absolute inset-0 hidden game-container">
             <!-- ゲーム上部UI -->
-            <div class="absolute top-0 left-0 right-0 z-10 p-4">
+            <div class="absolute top-0 left-0 right-0 z-10 p-2 md:p-4">
                 <div class="flex justify-between items-start">
                     <!-- 左側：スコア、コンボ -->
-                    <div class="stats-card rounded-lg p-3 text-white">
-                        <div class="text-sm opacity-90">Score</div>
-                        <div id="score" class="text-2xl font-bold">0</div>
-                        <div id="combo" class="text-sm mt-1 hidden">
+                    <div class="stats-card rounded-lg p-2 md:p-3 text-white">
+                        <div class="text-xs md:text-sm opacity-90">Score</div>
+                        <div id="score" class="text-lg md:text-2xl font-bold">0</div>
+                        <div id="combo" class="text-xs md:text-sm mt-1 hidden">
                             Combo: <span class="font-bold text-yellow-300">0</span>x
                         </div>
                     </div>
                     
                     <!-- 右側：タイマー、ポーズ -->
-                    <div class="flex items-center gap-3">
-                        <div class="stats-card rounded-lg p-3 text-white text-center">
-                            <div class="text-sm opacity-90">Time</div>
-                            <div id="timeLeft" class="text-2xl font-bold">60</div>
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <div class="stats-card rounded-lg p-2 md:p-3 text-white text-center">
+                            <div class="text-xs md:text-sm opacity-90">Time</div>
+                            <div id="timeLeft" class="text-lg md:text-2xl font-bold">60</div>
                         </div>
-                        <button id="pauseBtn" class="bg-white/20 hover:bg-white/30 text-white p-3 rounded-lg transition-all">
+                        <button id="pauseBtn" class="key-btn bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-lg transition-all text-sm md:text-base">
                             ⏸️
                         </button>
                     </div>
@@ -179,49 +246,53 @@
             </div>
             
             <!-- 落下単語エリア -->
-            <div id="wordsContainer" class="absolute inset-0 pointer-events-none"></div>
+            <div id="wordsContainer" class="absolute inset-0 words-area pointer-events-none" style="top: 80px; bottom: 200px;"></div>
             
             <!-- パーティクルエフェクトコンテナ -->
             <div id="particlesContainer" class="absolute inset-0 pointer-events-none"></div>
             
-            <!-- 入力エリア -->
-            <div class="absolute bottom-0 left-0 right-0 p-4">
+            <!-- 入力エリア（下部固定） -->
+            <div class="keyboard-container bg-black/20 backdrop-blur-sm">
                 <!-- 現在の入力表示 -->
-                <div class="stats-card rounded-lg p-4 mb-4 text-center">
-                    <div class="text-white text-lg mb-2">入力中:</div>
-                    <div id="currentInput" class="text-2xl font-mono bg-black/30 rounded px-4 py-2 text-white min-h-[40px]"></div>
-                </div>
-                
-                <!-- 入力モード切替 -->
-                <div class="flex justify-center gap-2 mb-4">
-                    <button id="toggleInput" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all">
-                        <span id="inputModeText">フリック入力</span>に切替
-                    </button>
+                <div class="p-2 md:p-4">
+                    <div class="stats-card rounded-lg p-3 md:p-4 text-center">
+                        <div class="text-white text-sm md:text-lg mb-2">入力中:</div>
+                        <div id="currentInput" class="input-display text-lg md:text-2xl font-mono bg-black/30 rounded px-4 py-2 text-white">
+                            <span class="text-gray-400">入力待ち...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 入力モード切替 -->
+                    <div class="flex justify-center gap-2 mt-2 md:mt-4">
+                        <button id="toggleInput" class="key-btn bg-white/20 hover:bg-white/30 text-white px-3 md:px-4 py-1 md:py-2 rounded-lg transition-all text-xs md:text-sm">
+                            <span id="inputModeText">フリック入力</span>に切替
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- キーボードエリア -->
-                <div id="keyboardContainer">
+                <div id="keyboardContainer" class="p-2 md:p-4">
                     <!-- QWERTY キーボード -->
-                    <div id="qwertyKeyboard" class="grid grid-cols-10 gap-1 md:gap-2 max-w-4xl mx-auto"></div>
+                    <div id="qwertyKeyboard" class="grid gap-1 md:gap-2"></div>
                     
                     <!-- フリック キーボード -->
-                    <div id="flickKeyboard" class="hidden grid grid-cols-5 gap-2 max-w-xl mx-auto"></div>
+                    <div id="flickKeyboard" class="hidden grid grid-cols-5 gap-1 md:gap-2"></div>
                 </div>
             </div>
         </div>
         
         <!-- 設定画面 -->
         <div id="settingsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
-            <div class="stats-card rounded-xl p-6 w-full max-w-md">
-                <h2 class="text-2xl font-bold text-white mb-6 text-center">設定</h2>
+            <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-md">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">設定</h2>
                 
                 <!-- 表示モード設定 -->
                 <div class="mb-6">
                     <h3 class="text-white font-semibold mb-3">表示モード</h3>
                     <div class="grid grid-cols-1 gap-2">
-                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="katakana">カタカナモード</button>
-                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="hiragana">ひらがなモード</button>
-                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="mixed">ミックスモード</button>
+                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="katakana">カタカナモード</button>
+                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="hiragana">ひらがなモード</button>
+                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="mixed">ミックスモード</button>
                     </div>
                 </div>
                 
@@ -229,9 +300,9 @@
                 <div class="mb-6">
                     <h3 class="text-white font-semibold mb-3">難易度</h3>
                     <div class="grid grid-cols-1 gap-2">
-                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="easy">かんたん (90秒)</button>
-                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="normal">ふつう (60秒)</button>
-                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="hard">むずかしい (45秒)</button>
+                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="easy">かんたん (90秒)</button>
+                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="normal">ふつう (60秒)</button>
+                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="hard">むずかしい (45秒)</button>
                     </div>
                 </div>
                 
@@ -243,7 +314,7 @@
                     </label>
                 </div>
                 
-                <button id="backToMenu" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                <button id="backToMenu" class="key-btn w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                     メニューに戻る
                 </button>
             </div>
@@ -253,8 +324,8 @@
         <div id="statisticsScreen" class="absolute inset-0 hidden overflow-y-auto p-4">
             <div class="max-w-4xl mx-auto">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-3xl font-bold text-white">統計・履歴</h2>
-                    <button id="backToMenuFromStats" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">統計・履歴</h2>
+                    <button id="backToMenuFromStats" class="key-btn bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
                         戻る
                     </button>
                 </div>
@@ -309,10 +380,74 @@
             </div>
         </div>
         
+        <!-- クレジット画面 -->
+        <div id="creditsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
+            <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-2xl">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">クレジット</h2>
+                
+                <div class="text-white space-y-6">
+                    <!-- ゲーム情報 -->
+                    <div class="text-center">
+                        <h3 class="text-lg font-bold mb-2">CGモデリング タイピングゲーム NEO v4.0</h3>
+                        <p class="text-sm opacity-80">VRoidとCGモデリング用語を学べるタイピングゲーム</p>
+                    </div>
+                    
+                    <!-- BGM -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">🎵 BGM</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <p class="text-sm">フリーBGM DOVA-SYNDROME様より</p>
+                            <p class="text-sm font-semibold">shimtone様「Desktop Duel」</p>
+                            <a href="https://dova-s.jp/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
+                                https://dova-s.jp/
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 効果音 -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">🔊 効果音</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <p class="text-sm">効果音LAB様</p>
+                            <a href="https://soundeffect-lab.info/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
+                                https://soundeffect-lab.info/
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- 技術情報 -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">🛠️ 使用技術</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <ul class="text-sm space-y-1">
+                                <li>• HTML5 / CSS3 / JavaScript</li>
+                                <li>• Tailwind CSS</li>
+                                <li>• Google Fonts (Noto Sans JP)</li>
+                                <li>• Web Storage API</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 開発情報 -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">💻 開発</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <p class="text-sm">TK2 LAB & Claude</p>
+                            <p class="text-xs opacity-70 mt-2">© 2025 TK2 LAB All rights reserved.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="backToMenuFromCredits" class="key-btn w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all mt-6">
+                    メニューに戻る
+                </button>
+            </div>
+        </div>
+        
         <!-- 結果画面 -->
         <div id="resultsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
-            <div class="stats-card rounded-xl p-6 w-full max-w-lg text-center">
-                <h2 class="text-3xl font-bold text-white mb-6">ゲーム結果</h2>
+            <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-lg text-center">
+                <h2 class="text-2xl md:text-3xl font-bold text-white mb-6">ゲーム結果</h2>
                 
                 <!-- 獲得XP表示 -->
                 <div id="xpGained" class="achievement-badge text-white font-bold py-2 px-4 rounded-lg mb-4 hidden">
@@ -320,27 +455,27 @@
                 </div>
                 
                 <!-- スコア表示 -->
-                <div class="text-4xl font-bold text-yellow-300 mb-4">
+                <div class="text-3xl md:text-4xl font-bold text-yellow-300 mb-4">
                     <span id="finalScore">0</span> pt
                 </div>
                 
                 <!-- 詳細統計 -->
-                <div class="grid grid-cols-2 gap-4 mb-6 text-white">
+                <div class="grid grid-cols-2 gap-4 mb-6 text-white text-sm md:text-base">
                     <div>
-                        <div class="text-sm opacity-80">入力単語数</div>
-                        <div id="finalWords" class="text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm opacity-80">入力単語数</div>
+                        <div id="finalWords" class="text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-sm opacity-80">最大コンボ</div>
-                        <div id="finalCombo" class="text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm opacity-80">最大コンボ</div>
+                        <div id="finalCombo" class="text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-sm opacity-80">WPM</div>
-                        <div id="finalWPM" class="text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm opacity-80">WPM</div>
+                        <div id="finalWPM" class="text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-sm opacity-80">正確性</div>
-                        <div id="finalAccuracy" class="text-xl font-bold">0%</div>
+                        <div class="text-xs md:text-sm opacity-80">正確性</div>
+                        <div id="finalAccuracy" class="text-lg md:text-xl font-bold">0%</div>
                     </div>
                 </div>
                 
@@ -356,10 +491,10 @@
                 
                 <!-- ボタン -->
                 <div class="flex flex-col gap-3">
-                    <button id="playAgain" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="playAgain" class="key-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                         もう一度プレイ
                     </button>
-                    <button id="backToMenuFromResults" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="backToMenuFromResults" class="key-btn bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                         メニューに戻る
                     </button>
                 </div>
@@ -368,21 +503,21 @@
         
         <!-- チュートリアル画面 -->
         <div id="tutorialScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
-            <div class="stats-card rounded-xl p-6 w-full max-w-2xl">
-                <h2 class="text-2xl font-bold text-white mb-6 text-center">チュートリアル</h2>
+            <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-2xl">
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">チュートリアル</h2>
                 
-                <div id="tutorialContent" class="text-white space-y-4 mb-6">
+                <div id="tutorialContent" class="text-white space-y-4 mb-6 text-sm md:text-base">
                     <!-- チュートリアル内容がここに表示される -->
                 </div>
                 
                 <div class="flex justify-between">
-                    <button id="tutorialPrev" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
+                    <button id="tutorialPrev" class="key-btn bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
                         前へ
                     </button>
                     <div class="flex items-center gap-2">
                         <span id="tutorialStep" class="text-white">1 / 4</span>
                     </div>
-                    <button id="tutorialNext" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
+                    <button id="tutorialNext" class="key-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
                         次へ
                     </button>
                 </div>
@@ -392,15 +527,15 @@
         <!-- ポーズ画面 -->
         <div id="pauseScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center bg-black/50">
             <div class="stats-card rounded-xl p-6 text-center">
-                <h2 class="text-2xl font-bold text-white mb-6">ポーズ中</h2>
+                <h2 class="text-xl md:text-2xl font-bold text-white mb-6">ポーズ中</h2>
                 <div class="flex flex-col gap-3">
-                    <button id="resumeGame" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="resumeGame" class="key-btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                         ゲーム再開
                     </button>
-                    <button id="restartGame" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="restartGame" class="key-btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                         リスタート
                     </button>
-                    <button id="quitGame" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="quitGame" class="key-btn bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
                         メニューに戻る
                     </button>
                 </div>
@@ -412,28 +547,28 @@
         // ===== ゲーム設定とデータ =====
         const GAME_CONFIG = {
             durations: { easy: 90, normal: 60, hard: 45 },
-            fallSpeeds: { easy: 3, normal: 4, hard: 5 },
+            fallSpeeds: { easy: 2, normal: 3, hard: 4 },
             spawnIntervals: { easy: 3000, normal: 2000, hard: 1500 },
-            version: 'v4.0.0 Ultimate Edition'
+            version: 'v4.0'
         };
 
         // カナ文字→ローマ字変換マップ
         const kanaToRomaji = {
             'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
             'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+            'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
             'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+            'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
             'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+            'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
             'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
             'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+            'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+            'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
             'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
             'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
             'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
             'わ': 'wa', 'を': 'wo', 'ん': 'n',
-            'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
-            'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
-            'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
-            'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
-            'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
             'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo',
             'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho',
             'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho',
@@ -448,19 +583,19 @@
             // カタカナ
             'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
             'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
+            'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
             'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
+            'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
             'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+            'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
             'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
             'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
+            'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
+            'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
             'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
             'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
             'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
             'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n',
-            'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
-            'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
-            'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
-            'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
-            'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
             'キャ': 'kya', 'キュ': 'kyu', 'キョ': 'kyo',
             'シャ': 'sha', 'シュ': 'shu', 'ショ': 'sho',
             'チャ': 'cha', 'チュ': 'chu', 'チョ': 'cho',
@@ -491,7 +626,6 @@
             { japanese: 'メッシュ', romaji: 'messhu' },
             { japanese: 'スキニング', romaji: 'sukiningu' },
             { japanese: 'ウェイト', romaji: 'weito' },
-            { japanese: 'バーテックス', romaji: 'baatekkusu' },
             { japanese: 'ポリゴン', romaji: 'porigon' },
             { japanese: 'シェーダー', romaji: 'sheedaa' },
             { japanese: 'ライティング', romaji: 'raitingu' },
@@ -501,73 +635,33 @@
             { japanese: 'ふく', romaji: 'fuku' },
             { japanese: 'めだま', romaji: 'medama' },
             { japanese: 'かお', romaji: 'kao' },
-            { japanese: 'からだ', romaji: 'karada' },
-            { japanese: 'うで', romaji: 'ude' },
-            { japanese: 'あし', romaji: 'ashi' },
-            { japanese: 'てのひら', romaji: 'tenohira' },
-            { japanese: 'ゆび', romaji: 'yubi' },
-            { japanese: 'つめ', romaji: 'tsume' },
-            { japanese: 'ポーズ', romaji: 'poozu' },
-            { japanese: 'まゆげ', romaji: 'mayuge' }
+            { japanese: 'からだ', romaji: 'karada' }
         ];
 
         const cgModelingWords = [
             { japanese: 'ユーブイ', romaji: 'yuubui' },
             { japanese: 'ノーマルマップ', romaji: 'noomarumappu' },
-            { japanese: 'アンビエントオクルージョン', romaji: 'anbientookuruujon' },
             { japanese: 'サブディビジョン', romaji: 'sabudibijon' },
             { japanese: 'トランスフォーム', romaji: 'toransufoomu' },
-            { japanese: 'アーマチュア', romaji: 'aamachua' },
             { japanese: 'キーフレーム', romaji: 'kiifureemu' },
             { japanese: 'スカルプト', romaji: 'sukarupito' },
-            { japanese: 'ダイナミックトポロジー', romaji: 'dainamikkutoporojii' },
             { japanese: 'ローポリ', romaji: 'roopori' },
             { japanese: 'ハイポリ', romaji: 'haipori' },
-            { japanese: 'ピービーアール', romaji: 'piibiiaaru' },
             { japanese: 'ブループリント', romaji: 'buruupurinto' },
             { japanese: 'ノード', romaji: 'noodo' },
             { japanese: 'エミッシブ', romaji: 'emisshibu' },
             { japanese: 'ラフネス', romaji: 'rafunesu' },
             { japanese: 'メタリック', romaji: 'metarikku' },
-            { japanese: 'コリジョン', romaji: 'korijon' },
             { japanese: 'パーティクル', romaji: 'paatikuru' },
-            { japanese: 'プロシージャル', romaji: 'puroshijaru' },
             { japanese: 'ベクター', romaji: 'bekutaa' },
-            { japanese: 'クォータニオン', romaji: 'kuootanion' },
             { japanese: 'シェイプキー', romaji: 'sheipukii' },
-            { japanese: 'コンポジット', romaji: 'konpojitto' },
-            { japanese: 'デバッグ', romaji: 'debaggu' },
-            { japanese: 'ビルド', romaji: 'birudo' },
             { japanese: 'アセット', romaji: 'asetto' },
-            { japanese: 'ワイヤーフレーム', romaji: 'waiaafureemu' },
             { japanese: 'シーン', romaji: 'shiin' },
             { japanese: 'オブジェクト', romaji: 'obujekuto' },
-            { japanese: 'モディファイア', romaji: 'modifuaia' },
             { japanese: 'ピクセル', romaji: 'pikuseru' },
-            { japanese: 'ブーリアン', romaji: 'buurian' },
-            { japanese: 'カーソル', romaji: 'kaasoru' },
-            { japanese: 'グリッド', romaji: 'guriddo' },
-            { japanese: 'イージング', romaji: 'iijingu' },
-            { japanese: 'カーブ', romaji: 'kaabu' },
-            { japanese: 'デプス', romaji: 'depusu' },
-            { japanese: 'アルファ', romaji: 'arufa' },
-            { japanese: 'ブラー', romaji: 'buraa' },
-            { japanese: 'カリング', romaji: 'karingu' },
-            { japanese: 'デカール', romaji: 'dekaaru' },
-            { japanese: 'エフェクト', romaji: 'efekuto' },
-            { japanese: 'フィルタ', romaji: 'firuta' },
-            { japanese: 'ギズモ', romaji: 'gizumo' },
-            { japanese: 'ハイトマップ', romaji: 'haitomappu' },
-            { japanese: 'イラディアンス', romaji: 'iradeiansu' },
             { japanese: 'レイヤー', romaji: 'reiyaa' },
             { japanese: 'マッピング', romaji: 'mappingu' },
-            { japanese: 'ミップマップ', romaji: 'mippumappu' },
-            { japanese: 'オクルージョン', romaji: 'okuruujon' },
-            { japanese: 'パースペクティブ', romaji: 'paasupekutibu' },
-            { japanese: 'プリミティブ', romaji: 'purimitibu' },
-            { japanese: 'リフレクション', romaji: 'rifurekushon' },
             { japanese: 'スケール', romaji: 'sukeeru' },
-            { japanese: 'タイル', romaji: 'tairu' },
             { japanese: 'ビューポート', romaji: 'byuupooto' }
         ];
 
@@ -642,30 +736,25 @@
                     if (saved) {
                         this.playerData = JSON.parse(saved);
                     } else {
-                        this.playerData = {
-                            level: 1,
-                            xp: 0,
-                            totalGames: 0,
-                            bestScore: 0,
-                            totalWordsTyped: 0,
-                            totalPlayTime: 0,
-                            recentGames: [],
-                            achievements: []
-                        };
+                        this.playerData = this.getDefaultPlayerData();
                     }
                 } catch (e) {
                     console.warn('プレイヤーデータの読み込みに失敗:', e);
-                    this.playerData = {
-                        level: 1,
-                        xp: 0,
-                        totalGames: 0,
-                        bestScore: 0,
-                        totalWordsTyped: 0,
-                        totalPlayTime: 0,
-                        recentGames: [],
-                        achievements: []
-                    };
+                    this.playerData = this.getDefaultPlayerData();
                 }
+            }
+
+            getDefaultPlayerData() {
+                return {
+                    level: 1,
+                    xp: 0,
+                    totalGames: 0,
+                    bestScore: 0,
+                    totalWordsTyped: 0,
+                    totalPlayTime: 0,
+                    recentGames: [],
+                    achievements: []
+                };
             }
 
             savePlayerData() {
@@ -741,14 +830,13 @@
                     try {
                         const audio = new Audio(path);
                         audio.volume = name === 'bgm' ? 0.3 : 0.7;
-                        audio.preload = 'auto';
+                        audio.preload = 'none';
                         audio.onerror = () => {
-                            console.warn(`サウンドファイルが見つかりません: ${path}`);
+                            // 音声ファイルが見つからなくてもエラーにしない
                             this.sounds[name] = null;
                         };
                         this.sounds[name] = audio;
                     } catch (e) {
-                        console.warn(`サウンドの初期化に失敗: ${name}`, e);
                         this.sounds[name] = null;
                     }
                 }
@@ -765,18 +853,18 @@
                     const sound = this.sounds[soundName];
                     if (volume !== null) sound.volume = volume;
                     sound.currentTime = 0;
-                    sound.play().catch(e => {
-                        console.warn(`サウンド再生エラー (${soundName}):`, e);
+                    sound.play().catch(() => {
+                        // 音声再生エラーを無視
                     });
                 } catch (e) {
-                    console.warn(`サウンド再生エラー (${soundName}):`, e);
+                    // 音声再生エラーを無視
                 }
             }
 
             playBGM() {
                 if (this.enabled && this.sounds.bgm) {
-                    this.sounds.bgm.play().catch(e => {
-                        console.warn('BGM再生エラー:', e);
+                    this.sounds.bgm.play().catch(() => {
+                        // BGM再生エラーを無視
                     });
                 }
             }
@@ -806,19 +894,20 @@
                 this.speed = speed;
                 this.typedLength = 0;
                 this.isCompleted = false;
+                this.isError = false;
                 this.element = this.createElement();
                 this.addToDOM();
             }
 
             createElement() {
                 const element = document.createElement('div');
-                element.className = 'absolute bg-white/90 rounded-lg p-3 shadow-lg transform transition-all duration-200';
+                element.className = 'word-card absolute bg-white/90 rounded-lg p-2 md:p-3 shadow-lg transform transition-all duration-200';
                 element.style.left = this.x + 'px';
                 element.style.top = this.y + 'px';
                 element.style.minWidth = '120px';
                 element.innerHTML = `
-                    <div class="text-lg font-bold text-gray-800 mb-1">${this.japanese}</div>
-                    <div class="text-sm font-mono">
+                    <div class="text-sm md:text-lg font-bold text-gray-800 mb-1">${this.japanese}</div>
+                    <div class="text-xs md:text-sm font-mono">
                         <span class="typed text-green-600"></span><span class="remaining text-gray-600">${this.romaji}</span>
                     </div>
                 `;
@@ -826,7 +915,10 @@
             }
 
             addToDOM() {
-                document.getElementById('wordsContainer').appendChild(this.element);
+                const container = document.getElementById('wordsContainer');
+                if (container) {
+                    container.appendChild(this.element);
+                }
             }
 
             update() {
@@ -836,7 +928,8 @@
                 this.element.style.top = this.y + 'px';
                 
                 // 画面下に到達したかチェック
-                if (this.y > window.innerHeight + 100) {
+                const containerHeight = document.getElementById('wordsContainer')?.offsetHeight || window.innerHeight;
+                if (this.y > containerHeight + 100) {
                     this.remove();
                     return false;
                 }
@@ -844,37 +937,33 @@
                 return true;
             }
 
-            updateDisplay() {
+            updateDisplay(currentInput) {
                 const typedSpan = this.element.querySelector('.typed');
                 const remainingSpan = this.element.querySelector('.remaining');
                 
-                typedSpan.textContent = this.romaji.substring(0, this.typedLength);
-                remainingSpan.textContent = this.romaji.substring(this.typedLength);
-                
-                // 入力ミスの場合は背景を赤くする
-                if (this.typedLength > 0 && !this.romaji.startsWith(gameState.gameData.currentInput)) {
-                    this.element.classList.add('bg-red-200');
+                if (this.romaji.startsWith(currentInput)) {
+                    this.typedLength = currentInput.length;
+                    this.isError = false;
+                    typedSpan.textContent = this.romaji.substring(0, this.typedLength);
+                    remainingSpan.textContent = this.romaji.substring(this.typedLength);
+                    this.element.classList.remove('error');
                 } else {
-                    this.element.classList.remove('bg-red-200');
+                    this.isError = true;
+                    this.element.classList.add('error');
                 }
             }
 
             checkInput(input) {
-                if (this.romaji.startsWith(input)) {
-                    this.typedLength = input.length;
-                    this.updateDisplay();
-                    
-                    if (input === this.romaji) {
-                        this.complete();
-                        return true;
-                    }
+                if (this.romaji === input) {
+                    this.complete();
+                    return true;
                 }
                 return false;
             }
 
             complete() {
                 this.isCompleted = true;
-                this.element.classList.add('animate-pulse', 'bg-green-200');
+                this.element.classList.add('completed');
                 
                 // パーティクルエフェクト
                 this.createParticles();
@@ -888,17 +977,23 @@
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
                 
-                for (let i = 0; i < 10; i++) {
+                for (let i = 0; i < 8; i++) {
                     const particle = document.createElement('div');
-                    particle.className = 'particle w-2 h-2 bg-yellow-400 rounded-full';
+                    particle.className = 'particle w-1 h-1 md:w-2 md:h-2 bg-yellow-400 rounded-full';
                     particle.style.left = centerX + 'px';
                     particle.style.top = centerY + 'px';
-                    particle.style.setProperty('--dx', (Math.random() - 0.5) * 200 + 'px');
-                    particle.style.setProperty('--dy', (Math.random() - 0.5) * 200 + 'px');
+                    particle.style.setProperty('--dx', (Math.random() - 0.5) * 150 + 'px');
+                    particle.style.setProperty('--dy', (Math.random() - 0.5) * 150 + 'px');
                     
-                    document.getElementById('particlesContainer').appendChild(particle);
-                    
-                    setTimeout(() => particle.remove(), 1000);
+                    const container = document.getElementById('particlesContainer');
+                    if (container) {
+                        container.appendChild(particle);
+                        setTimeout(() => {
+                            if (particle.parentNode) {
+                                particle.parentNode.removeChild(particle);
+                            }
+                        }, 1000);
+                    }
                 }
             }
 
@@ -916,6 +1011,7 @@
                 this.soundSystem = new SoundSystem();
                 this.wordSpawnTimer = null;
                 this.gameTimer = null;
+                this.gameLoopId = null;
                 this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
                 this.init();
@@ -937,6 +1033,7 @@
                 document.getElementById('tutorialBtn').addEventListener('click', () => this.showTutorial());
                 document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
                 document.getElementById('statisticsBtn').addEventListener('click', () => this.showStatistics());
+                document.getElementById('creditsBtn').addEventListener('click', () => this.showCredits());
                 
                 // 設定画面
                 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -968,6 +1065,9 @@
                 // 統計画面
                 document.getElementById('backToMenuFromStats').addEventListener('click', () => this.showScreen('menu'));
                 
+                // クレジット画面
+                document.getElementById('backToMenuFromCredits').addEventListener('click', () => this.showScreen('menu'));
+                
                 // チュートリアル
                 document.getElementById('tutorialPrev').addEventListener('click', () => this.prevTutorialStep());
                 document.getElementById('tutorialNext').addEventListener('click', () => this.nextTutorialStep());
@@ -986,25 +1086,32 @@
 
             createQWERTYKeyboard() {
                 const container = document.getElementById('qwertyKeyboard');
+                if (!container) return;
+
                 const keys = [
                     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-                    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '←'],
-                    ['z', 'x', 'c', 'v', 'b', 'n', 'm', '消去']
+                    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+                    ['z', 'x', 'c', 'v', 'b', 'n', 'm', '←', '消去']
                 ];
                 
                 container.innerHTML = '';
                 
+                // スマホの場合は3列×3行のレイアウトに変更
+                if (this.isMobile) {
+                    container.className = 'grid grid-cols-5 gap-1';
+                } else {
+                    container.className = 'grid grid-cols-10 gap-2';
+                }
+                
                 keys.forEach((row, rowIndex) => {
                     row.forEach(key => {
                         const button = document.createElement('button');
-                        button.textContent = key.toUpperCase();
-                        button.className = 'bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded transition-all transform active:scale-95';
+                        button.textContent = key === '←' ? '←' : key === '消去' ? '消去' : key.toUpperCase();
+                        button.className = 'key-btn bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded transition-all text-xs md:text-sm';
                         
                         if (key === '←') {
-                            button.className += ' col-span-1';
                             button.addEventListener('click', () => this.handleBackspace());
                         } else if (key === '消去') {
-                            button.className += ' col-span-2';
                             button.addEventListener('click', () => this.handleClear());
                         } else {
                             button.addEventListener('click', () => this.handleCharInput(key));
@@ -1017,21 +1124,23 @@
 
             createFlickKeyboard() {
                 const container = document.getElementById('flickKeyboard');
+                if (!container) return;
+
                 const flickKeys = [
-                    { main: 'あ', flicks: ['い', 'う', 'え', 'お'] },
-                    { main: 'か', flicks: ['き', 'く', 'け', 'こ'] },
-                    { main: 'さ', flicks: ['し', 'す', 'せ', 'そ'] },
-                    { main: 'た', flicks: ['ち', 'つ', 'て', 'と'] },
-                    { main: 'な', flicks: ['に', 'ぬ', 'ね', 'の'] },
-                    { main: 'は', flicks: ['ひ', 'ふ', 'へ', 'ほ'] },
-                    { main: 'ま', flicks: ['み', 'む', 'め', 'も'] },
-                    { main: 'や', flicks: ['ゆ', 'よ'] },
-                    { main: 'ら', flicks: ['り', 'る', 'れ', 'ろ'] },
-                    { main: 'わ', flicks: ['を', 'ん'] },
+                    { main: 'あ', sub: ['い', 'う', 'え', 'お'] },
+                    { main: 'か', sub: ['き', 'く', 'け', 'こ'] },
+                    { main: 'さ', sub: ['し', 'す', 'せ', 'そ'] },
+                    { main: 'た', sub: ['ち', 'つ', 'て', 'と'] },
+                    { main: 'な', sub: ['に', 'ぬ', 'ね', 'の'] },
+                    { main: 'は', sub: ['ひ', 'ふ', 'へ', 'ほ'] },
+                    { main: 'ま', sub: ['み', 'む', 'め', 'も'] },
+                    { main: 'や', sub: ['ゆ', 'よ'] },
+                    { main: 'ら', sub: ['り', 'る', 'れ', 'ろ'] },
+                    { main: 'わ', sub: ['を', 'ん'] },
                     { main: '←', type: 'backspace' },
                     { main: '消去', type: 'clear' },
-                    { main: '゛゜', flicks: ['が', 'ぱ'] },
                     { main: 'ー', type: 'dash' },
+                    { main: '゛゜', sub: ['が', 'ぱ'] },
                     { main: 'ABC', type: 'toggle' }
                 ];
                 
@@ -1039,50 +1148,23 @@
                 
                 flickKeys.forEach(keyData => {
                     const button = document.createElement('button');
-                    button.className = 'flick-key bg-white/80 hover:bg-white text-gray-800 font-semibold py-3 px-2 rounded-lg transition-all relative';
-                    button.innerHTML = `
-                        <div class="text-lg">${keyData.main}</div>
-                        ${keyData.flicks ? `
-                            <div class="flick-hints">
-                                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[1] || ''}</div>
-                                <div class="absolute top-1/2 -left-6 transform -translate-y-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[0] || ''}</div>
-                                <div class="absolute top-1/2 -right-6 transform -translate-y-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[2] || ''}</div>
-                                <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[3] || ''}</div>
-                            </div>
-                        ` : ''}
-                    `;
+                    button.className = 'flick-key key-btn bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded-lg transition-all relative text-xs md:text-sm';
+                    button.textContent = keyData.main;
                     
-                    // タッチイベントの処理
-                    if (keyData.type === 'backspace') {
-                        button.addEventListener('click', () => this.handleBackspace());
-                    } else if (keyData.type === 'clear') {
-                        button.addEventListener('click', () => this.handleClear());
-                    } else if (keyData.type === 'toggle') {
-                        button.addEventListener('click', () => this.toggleInputMode());
-                    } else if (keyData.type === 'dash') {
-                        button.addEventListener('click', () => this.handleKanaInput('ー'));
-                    } else {
-                        button.addEventListener('click', () => this.handleKanaInput(keyData.main));
-                        
-                        // フリック対応（簡易版）
-                        if (keyData.flicks) {
-                            let startY = 0;
-                            button.addEventListener('touchstart', (e) => {
-                                startY = e.touches[0].clientY;
-                            });
-                            button.addEventListener('touchend', (e) => {
-                                const endY = e.changedTouches[0].clientY;
-                                const deltaY = startY - endY;
-                                if (Math.abs(deltaY) > 20) {
-                                    if (deltaY > 0 && keyData.flicks[1]) {
-                                        this.handleKanaInput(keyData.flicks[1]);
-                                    } else if (deltaY < 0 && keyData.flicks[3]) {
-                                        this.handleKanaInput(keyData.flicks[3]);
-                                    }
-                                }
-                            });
+                    // シンプルなタップ処理
+                    button.addEventListener('click', () => {
+                        if (keyData.type === 'backspace') {
+                            this.handleBackspace();
+                        } else if (keyData.type === 'clear') {
+                            this.handleClear();
+                        } else if (keyData.type === 'toggle') {
+                            this.toggleInputMode();
+                        } else if (keyData.type === 'dash') {
+                            this.handleKanaInput('ー');
+                        } else {
+                            this.handleKanaInput(keyData.main);
                         }
-                    }
+                    });
                     
                     container.appendChild(button);
                 });
@@ -1215,25 +1297,32 @@
 
             triggerComboEffect() {
                 const comboElement = document.getElementById('combo');
-                comboElement.classList.add('combo-pulse');
-                setTimeout(() => comboElement.classList.remove('combo-pulse'), 300);
+                if (comboElement) {
+                    comboElement.classList.add('combo-pulse');
+                    setTimeout(() => comboElement.classList.remove('combo-pulse'), 300);
+                }
             }
 
             triggerScreenShake() {
-                document.getElementById('gameContainer').classList.add('screen-shake');
-                setTimeout(() => {
-                    document.getElementById('gameContainer').classList.remove('screen-shake');
-                }, 300);
+                const container = document.getElementById('gameContainer');
+                if (container) {
+                    container.classList.add('screen-shake');
+                    setTimeout(() => {
+                        container.classList.remove('screen-shake');
+                    }, 300);
+                }
             }
 
             updateWordDisplays() {
                 this.gameState.gameData.words.forEach(word => {
-                    word.updateDisplay();
+                    word.updateDisplay(this.gameState.gameData.currentInput);
                 });
             }
 
             updateInput() {
                 const inputElement = document.getElementById('currentInput');
+                if (!inputElement) return;
+
                 const input = this.gameState.gameData.currentInput;
                 
                 // 入力の色分け表示
@@ -1263,7 +1352,8 @@
                 
                 const words = this.getCurrentWordList();
                 const randomWord = words[Math.floor(Math.random() * words.length)];
-                const x = Math.random() * (window.innerWidth - 200) + 50;
+                const containerWidth = document.getElementById('wordsContainer')?.offsetWidth || window.innerWidth;
+                const x = Math.random() * (containerWidth - 200) + 50;
                 const speed = GAME_CONFIG.fallSpeeds[this.gameState.gameSettings.difficulty];
                 
                 const word = new Word(randomWord, x, speed);
@@ -1305,7 +1395,7 @@
                 
                 // タイマー開始
                 this.gameTimer = setInterval(() => {
-                    if (!this.gameState.gameData.isPaused) {
+                    if (!this.gameState.gameData.isPaused && this.gameState.gameData.isGameActive) {
                         this.gameState.gameData.timeLeft--;
                         this.updateUI();
                         
@@ -1317,25 +1407,35 @@
                 
                 // 単語スポーン開始
                 this.wordSpawnTimer = setInterval(() => {
-                    if (!this.gameState.gameData.isPaused) {
+                    if (!this.gameState.gameData.isPaused && this.gameState.gameData.isGameActive) {
                         this.spawnWord();
                     }
                 }, GAME_CONFIG.spawnIntervals[this.gameState.gameSettings.difficulty]);
                 
                 // ゲームループ開始
-                this.gameLoop();
+                this.startGameLoop();
                 
                 // BGM開始
                 this.soundSystem.playBGM();
             }
 
-            gameLoop() {
-                if (!this.gameState.gameData.isGameActive) return;
-                
-                this.updateWordsPosition();
-                
-                if (this.gameState.gameData.isGameActive) {
-                    requestAnimationFrame(() => this.gameLoop());
+            startGameLoop() {
+                const gameLoop = () => {
+                    if (this.gameState.gameData.isGameActive && !this.gameState.gameData.isPaused) {
+                        this.updateWordsPosition();
+                    }
+                    
+                    if (this.gameState.gameData.isGameActive) {
+                        this.gameLoopId = requestAnimationFrame(gameLoop);
+                    }
+                };
+                this.gameLoopId = requestAnimationFrame(gameLoop);
+            }
+
+            stopGameLoop() {
+                if (this.gameLoopId) {
+                    cancelAnimationFrame(this.gameLoopId);
+                    this.gameLoopId = null;
                 }
             }
 
@@ -1364,6 +1464,7 @@
             endGame(saveData = true) {
                 this.gameState.gameData.isGameActive = false;
                 this.soundSystem.stopBGM();
+                this.stopGameLoop();
                 
                 if (this.gameTimer) {
                     clearInterval(this.gameTimer);
@@ -1379,7 +1480,10 @@
                 this.gameState.gameData.words = [];
                 
                 // パーティクルをクリア
-                document.getElementById('particlesContainer').innerHTML = '';
+                const particlesContainer = document.getElementById('particlesContainer');
+                if (particlesContainer) {
+                    particlesContainer.innerHTML = '';
+                }
                 
                 if (saveData) {
                     this.saveGameResult();
@@ -1508,7 +1612,7 @@
             }
 
             showTutorial() {
-                this.tutorialStep = 0;
+                this.gameState.tutorialStep = 0;
                 this.showScreen('tutorial');
                 this.updateTutorial();
             }
@@ -1538,7 +1642,7 @@
                         content: `
                             <h3 class="font-bold mb-2">2つの入力モード</h3>
                             <p class="mb-2"><strong>QWERTYモード：</strong>PCキーボードと同じ配列</p>
-                            <p class="mb-2"><strong>フリックモード：</strong>スマホのフリック入力風</p>
+                            <p class="mb-2"><strong>フリックモード：</strong>かな入力（タップでひらがな入力）</p>
                             <p>ゲーム中でも「切替」ボタンで自由に変更できます。</p>
                         `
                     },
@@ -1554,26 +1658,34 @@
                     }
                 ];
                 
-                const step = steps[this.tutorialStep];
-                document.getElementById('tutorialContent').innerHTML = step.content;
-                document.getElementById('tutorialStep').textContent = `${this.tutorialStep + 1} / ${steps.length}`;
+                const step = steps[this.gameState.tutorialStep];
+                const contentElement = document.getElementById('tutorialContent');
+                if (contentElement) {
+                    contentElement.innerHTML = step.content;
+                }
+                
+                const stepElement = document.getElementById('tutorialStep');
+                if (stepElement) {
+                    stepElement.textContent = `${this.gameState.tutorialStep + 1} / ${steps.length}`;
+                }
                 
                 // ボタンの状態更新
-                document.getElementById('tutorialPrev').disabled = this.tutorialStep === 0;
-                document.getElementById('tutorialNext').textContent = 
-                    this.tutorialStep === steps.length - 1 ? '完了' : '次へ';
+                const prevBtn = document.getElementById('tutorialPrev');
+                const nextBtn = document.getElementById('tutorialNext');
+                if (prevBtn) prevBtn.disabled = this.gameState.tutorialStep === 0;
+                if (nextBtn) nextBtn.textContent = this.gameState.tutorialStep === steps.length - 1 ? '完了' : '次へ';
             }
 
             prevTutorialStep() {
-                if (this.tutorialStep > 0) {
-                    this.tutorialStep--;
+                if (this.gameState.tutorialStep > 0) {
+                    this.gameState.tutorialStep--;
                     this.updateTutorial();
                 }
             }
 
             nextTutorialStep() {
-                if (this.tutorialStep < 3) {
-                    this.tutorialStep++;
+                if (this.gameState.tutorialStep < 3) {
+                    this.gameState.tutorialStep++;
                     this.updateTutorial();
                 } else {
                     this.showScreen('menu');
@@ -1588,18 +1700,25 @@
             updateSettingsUI() {
                 // モードボタンの状態更新
                 document.querySelectorAll('.mode-btn').forEach(btn => {
-                    btn.classList.toggle('bg-blue-500', btn.dataset.mode === this.gameState.gameSettings.mode);
-                    btn.classList.toggle('text-white', btn.dataset.mode === this.gameState.gameSettings.mode);
+                    const isSelected = btn.dataset.mode === this.gameState.gameSettings.mode;
+                    btn.classList.toggle('bg-blue-500', isSelected);
+                    btn.classList.toggle('text-white', isSelected);
+                    btn.classList.toggle('bg-white/20', !isSelected);
                 });
                 
                 // 難易度ボタンの状態更新
                 document.querySelectorAll('.difficulty-btn').forEach(btn => {
-                    btn.classList.toggle('bg-blue-500', btn.dataset.difficulty === this.gameState.gameSettings.difficulty);
-                    btn.classList.toggle('text-white', btn.dataset.difficulty === this.gameState.gameSettings.difficulty);
+                    const isSelected = btn.dataset.difficulty === this.gameState.gameSettings.difficulty;
+                    btn.classList.toggle('bg-blue-500', isSelected);
+                    btn.classList.toggle('text-white', isSelected);
+                    btn.classList.toggle('bg-white/20', !isSelected);
                 });
                 
                 // サウンド設定
-                document.getElementById('soundToggle').checked = this.gameState.gameSettings.soundEnabled;
+                const soundToggle = document.getElementById('soundToggle');
+                if (soundToggle) {
+                    soundToggle.checked = this.gameState.gameSettings.soundEnabled;
+                }
             }
 
             showStatistics() {
@@ -1611,127 +1730,23 @@
                 const playerData = this.gameState.playerData;
                 
                 // 基本統計
-                document.getElementById('totalGames').textContent = playerData.totalGames;
-                document.getElementById('bestScore').textContent = playerData.bestScore;
+                const totalGamesEl = document.getElementById('totalGames');
+                const bestScoreEl = document.getElementById('bestScore');
+                if (totalGamesEl) totalGamesEl.textContent = playerData.totalGames;
+                if (bestScoreEl) bestScoreEl.textContent = playerData.bestScore;
                 
                 // 平均WPM計算
                 const averageWPM = playerData.recentGames.length > 0 ? 
                     Math.round(playerData.recentGames.reduce((sum, game) => sum + game.wpm, 0) / playerData.recentGames.length) : 0;
-                document.getElementById('averageWPM').textContent = averageWPM;
+                const averageWPMEl = document.getElementById('averageWPM');
+                if (averageWPMEl) averageWPMEl.textContent = averageWPM;
                 
                 // レベル進行状況
-                document.getElementById('currentLevel').textContent = playerData.level;
-                document.getElementById('currentXP').textContent = playerData.xp;
-                document.getElementById('nextLevelXP').textContent = this.gameState.getXPForLevel(playerData.level);
-                document.getElementById('levelProgress').style.width = this.gameState.getCurrentLevelProgress() + '%';
+                const currentLevelEl = document.getElementById('currentLevel');
+                const currentXPEl = document.getElementById('currentXP');
+                const nextLevelXPEl = document.getElementById('nextLevelXP');
+                const levelProgressEl = document.getElementById('levelProgress');
                 
-                // 実績表示
-                const achievementsContainer = document.getElementById('achievements');
-                achievementsContainer.innerHTML = '';
-                
-                playerData.achievements.forEach(achievement => {
-                    const achievementElement = document.createElement('div');
-                    achievementElement.className = 'achievement-badge text-white p-3 rounded-lg';
-                    achievementElement.innerHTML = `
-                        <div class="font-bold">${achievement.name}</div>
-                        <div class="text-sm opacity-90">${achievement.description}</div>
-                    `;
-                    achievementsContainer.appendChild(achievementElement);
-                });
-                
-                if (playerData.achievements.length === 0) {
-                    achievementsContainer.innerHTML = '<p class="text-white/70">まだ実績がありません</p>';
-                }
-                
-                // 最近のゲーム履歴
-                const recentGamesContainer = document.getElementById('recentGames');
-                recentGamesContainer.innerHTML = '';
-                
-                playerData.recentGames.slice(0, 10).forEach(game => {
-                    const gameElement = document.createElement('div');
-                    gameElement.className = 'bg-white/10 rounded p-3 text-white';
-                    const date = new Date(game.date).toLocaleDateString('ja-JP');
-                    gameElement.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <div class="font-bold">${game.score}pt</div>
-                                <div class="text-sm opacity-75">${date}</div>
-                            </div>
-                            <div class="text-right text-sm">
-                                <div>WPM: ${game.wpm}</div>
-                                <div>正確性: ${game.accuracy}%</div>
-                            </div>
-                        </div>
-                    `;
-                    recentGamesContainer.appendChild(gameElement);
-                });
-                
-                if (playerData.recentGames.length === 0) {
-                    recentGamesContainer.innerHTML = '<p class="text-white/70">まだゲーム履歴がありません</p>';
-                }
-            }
-
-            changeMode(mode) {
-                this.gameState.gameSettings.mode = mode;
-                this.gameState.saveSettings();
-                this.updateUI();
-                this.updateSettingsUI();
-                this.soundSystem.play('click');
-            }
-
-            changeDifficulty(difficulty) {
-                this.gameState.gameSettings.difficulty = difficulty;
-                this.gameState.saveSettings();
-                this.updateUI();
-                this.updateSettingsUI();
-                this.soundSystem.play('click');
-            }
-
-            toggleInputMode() {
-                const currentMode = this.gameState.gameSettings.inputMode;
-                this.gameState.gameSettings.inputMode = currentMode === 'qwerty' ? 'flick' : 'qwerty';
-                this.gameState.saveSettings();
-                this.updateInputModeUI();
-                this.soundSystem.play('click');
-            }
-
-            updateInputModeUI() {
-                const isQwerty = this.gameState.gameSettings.inputMode === 'qwerty';
-                
-                document.getElementById('qwertyKeyboard').classList.toggle('hidden', !isQwerty);
-                document.getElementById('flickKeyboard').classList.toggle('hidden', isQwerty);
-                document.getElementById('inputModeText').textContent = isQwerty ? 'フリック入力' : 'QWERTY入力';
-            }
-
-            showScreen(screenName) {
-                const screens = ['menu', 'game', 'settings', 'statistics', 'tutorial', 'pause', 'results'];
-                screens.forEach(screen => {
-                    const element = document.getElementById(screen + 'Screen');
-                    if (element) {
-                        element.classList.toggle('hidden', screen !== screenName);
-                    }
-                });
-                this.gameState.currentScreen = screenName;
-                
-                if (screenName === 'game') {
-                    this.updateInputModeUI();
-                }
-            }
-
-            updateUI() {
-                // メニュー画面の現在設定表示
-                const modeNames = { katakana: 'カタカナ', hiragana: 'ひらがな', mixed: 'ミックス' };
-                const difficultyNames = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
-                
-                document.getElementById('currentMode').textContent = modeNames[this.gameState.gameSettings.mode];
-                document.getElementById('currentDifficulty').textContent = difficultyNames[this.gameState.gameSettings.difficulty];
-                
-                // ゲーム画面UI更新
-                if (this.gameState.currentScreen === 'game') {
-                    document.getElementById('score').textContent = this.gameState.gameData.score;
-                    document.getElementById('timeLeft').textContent = this.gameState.gameData.timeLeft;
-                    
-                    const comboElement = document.getElementById('combo');
-                    if (this.gameState.gameData.combo > 1) {
-                        comboElement.classList.remove('hidden');
-                        comboElement.querySelector('span').
+                if (currentLevelEl) currentLevelEl.textContent = playerData.level;
+                if (currentXPEl) currentXPEl.textContent = playerData.xp;
+                if (nextLevelXPEl) nextLevelXPEl.textContent = this.gameState.getX
