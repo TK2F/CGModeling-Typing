@@ -186,19 +186,16 @@
         
         /* ゲーム状態インジケーター */
         .speed-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
             background: rgba(0, 20, 40, 0.9);
             border: 2px solid rgba(255, 215, 0, 0.7);
             border-radius: 10px;
-            padding: 10px 15px;
+            padding: 8px 12px;
             color: #ffd700;
             font-family: 'Orbitron', monospace;
             font-weight: 700;
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-            z-index: 50;
+            backdrop-filter: blur(10px);
         }
         
         .rescue-mode {
@@ -266,6 +263,7 @@
                 right: 5px;
                 transform: none;
                 padding: 10px;
+                max-height: 25vh;
             }
             
             .cyber-key {
@@ -275,10 +273,13 @@
             }
             
             .speed-indicator {
-                top: 10px;
-                right: 10px;
-                padding: 8px 12px;
-                font-size: 12px;
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            
+            .input-display {
+                font-size: 16px;
+                padding: 12px 16px;
             }
         }
 
@@ -388,11 +389,18 @@
             <div class="absolute top-0 left-0 right-0 z-10 p-2 md:p-4">
                 <div class="flex justify-between items-start">
                     <!-- 左側：スコア、コンボ -->
-                    <div class="stats-card rounded-lg p-2 md:p-3">
-                        <div class="text-xs md:text-sm text-cyan-300">Score</div>
-                        <div id="score" class="cyber-font text-lg md:text-2xl font-bold text-white">0</div>
-                        <div id="combo" class="text-xs md:text-sm mt-1 hidden">
-                            Combo: <span class="cyber-font font-bold text-yellow-300">0</span>x
+                    <div class="flex flex-col gap-2">
+                        <div class="stats-card rounded-lg p-2 md:p-3">
+                            <div class="text-xs md:text-sm text-cyan-300">Score</div>
+                            <div id="score" class="cyber-font text-lg md:text-2xl font-bold text-white">0</div>
+                            <div id="combo" class="text-xs md:text-sm mt-1 hidden">
+                                Combo: <span class="cyber-font font-bold text-yellow-300">0</span>x
+                            </div>
+                        </div>
+                        <!-- スピードインジケーター（スコアの下） -->
+                        <div id="speedIndicator" class="speed-indicator hidden position-static">
+                            <div class="text-xs">SPEED LV.</div>
+                            <div id="speedLevel" class="text-sm font-bold">1</div>
                         </div>
                     </div>
                     
@@ -407,11 +415,7 @@
                 </div>
             </div>
             
-            <!-- スピードインジケーター -->
-            <div id="speedIndicator" class="speed-indicator hidden">
-                <div class="text-sm">SPEED LV.</div>
-                <div id="speedLevel" class="text-lg font-bold">1</div>
-            </div>
+            <!-- 旧スピードインジケーター位置（削除） -->
             
             <!-- 救済モード表示 -->
             <div id="rescueMode" class="rescue-mode hidden">
@@ -420,13 +424,13 @@
             </div>
             
             <!-- 落下単語エリア -->
-            <div id="wordsContainer" class="absolute inset-0 pointer-events-none" style="top: 80px; bottom: 120px;"></div>
+            <div id="wordsContainer" class="absolute inset-0 pointer-events-none" style="top: 120px; bottom: 200px;"></div>
             
             <!-- パーティクルエフェクトコンテナ -->
             <div id="particlesContainer" class="absolute inset-0 pointer-events-none"></div>
             
-            <!-- 入力表示（下部中央） -->
-            <div class="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-80 max-w-full px-4">
+            <!-- 入力表示（キーボードの上） -->
+            <div class="absolute bottom-32 md:bottom-40 left-1/2 transform -translate-x-1/2 w-80 max-w-full px-4 z-20">
                 <div class="input-display text-lg md:text-xl font-mono text-cyan-300 px-4 py-3">
                     <span id="currentInput" class="text-white">入力待ち...</span>
                 </div>
