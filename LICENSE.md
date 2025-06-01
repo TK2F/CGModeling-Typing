@@ -1,7 +1,3 @@
-===============================================================================
-English Section
-===============================================================================
-
 Important Notice Regarding Third-Party Assets
 ---------------------------------------------
 
@@ -47,10 +43,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-===============================================================================
-日本語セクション (Japanese Section)
-===============================================================================
 
 第三者素材に関する重要な注意事項
 ---------------------------------
