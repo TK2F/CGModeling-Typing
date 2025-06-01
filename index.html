@@ -56,6 +56,92 @@ const sketch = (p) => {
         });
     }
 
+    const kanaToRomaji = {
+        // Hiragana
+        'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+        'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+        'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+        'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+        'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+        'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+        'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+        'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+        'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+        'わ': 'wa', 'を': 'wo', 'ん': 'n',
+        'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+        'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+        'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+        'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+        'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
+        'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo',
+        'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho',
+        'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho',
+        'にゃ': 'nya', 'にゅ': 'nyu', 'にょ': 'nyo',
+        'ひゃ': 'hya', 'ひゅ': 'hyu', 'ひょ': 'hyo',
+        'みゃ': 'mya', 'みゅ': 'myu', 'みょ': 'myo',
+        'りゃ': 'rya', 'りゅ': 'ryu', 'りょ': 'ryo',
+        'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo',
+        'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo',
+        'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo',
+        'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo',
+        'うぃ': 'wi', 'うぇ': 'we', 'うぉ': 'wo', // Note: 'wo' is also 'を'
+        'ふぁ': 'fa', 'ふぃ': 'fi', 'ふぇ': 'fe', 'ふぉ': 'fo',
+        'つぁ': 'tsa', 'つぃ': 'tsi', 'つぇ': 'tse', 'つぉ': 'tso',
+        'ちぇ': 'che', 'しぇ': 'she', 'じぇ': 'je',
+        'っ': 'xtsu', // Small tsu - placeholder, actual handling is context-dependent (doubles next consonant)
+        'ぁ': 'xa', 'ぃ': 'xi', 'ぅ': 'xu', 'ぇ': 'xe', 'ぉ': 'xo', // Small vowels
+        'ゃ': 'xya', 'ゅ': 'xyu', 'ょ': 'xyo',
+        // Katakana
+        'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
+        'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
+        'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
+        'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+        'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
+        'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
+        'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
+        'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
+        'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
+        'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n',
+        'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
+        'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
+        'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
+        'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
+        'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
+        'キャ': 'kya', 'キュ': 'kyu', 'キョ': 'kyo',
+        'シャ': 'sha', 'シュ': 'shu', 'ショ': 'sho',
+        'チャ': 'cha', 'チュ': 'chu', 'チョ': 'cho',
+        'ニャ': 'nya', 'ニュ': 'nyu', 'ニョ': 'nyo',
+        'ヒャ': 'hya', 'ヒュ': 'hyu', 'ヒョ': 'hyo',
+        'ミャ': 'mya', 'ミュ': 'myu', 'ミョ': 'myo',
+        'リャ': 'rya', 'リュ': 'ryu', 'リョ': 'ryo',
+        'ギャ': 'gya', 'ギュ': 'gyu', 'ギョ': 'gyo',
+        'ジャ': 'ja', 'ジュ': 'ju', 'ジョ': 'jo',
+        'ビャ': 'bya', 'ビュ': 'byu', 'ビョ': 'byo',
+        'ピャ': 'pya', 'ピュ': 'pyu', 'ピョ': 'pyo',
+        'ウィ': 'wi', 'ウェ': 'we', 'ウォ': 'wo',
+        'ファ': 'fa', 'フィ': 'fi', 'フェ': 'fe', 'フォ': 'fo',
+        'ツァ': 'tsa', 'ツィ': 'tsi', 'ツェ': 'tse', 'ツォ': 'tso',
+        'チェ': 'che', 'シェ': 'she', 'ジェ': 'je',
+        'ッ': 'xtsu',
+        'ァ': 'xa', 'ィ': 'xi', 'ゥ': 'xu', 'ェ': 'xe', 'ォ': 'xo',
+        'ャ': 'xya', 'ュ': 'xyu', 'ョ': 'xyo',
+        // Special symbols from flick keyboard
+        '゛': '_DAKUTEN_', '゜': '_HANDAKUTEN_',
+        // Small kana not covered by 'x' prefix that might come from "小" key
+        'ゎ': 'xwa', // Small wa (rare)
+        // ー (長音符 - long vowel mark)
+        'ー': '-',
+    };
+
+    function convertKanaToRomaji(kana) {
+        if (kanaToRomaji[kana]) {
+            return kanaToRomaji[kana];
+        }
+        // Basic fallback for unknown kana, though the map should be comprehensive
+        console.warn("Unknown Kana for Romaji conversion:", kana);
+        return kana;
+    }
+
     // VRoid Studio related words (Katakana) - from typing2.html
     const vroidWords = [
         { japanese: 'ブイロイド', romaji: 'buiroido' }, { japanese: 'スタジオ', romaji: 'sutajio' },
@@ -106,7 +192,57 @@ const sketch = (p) => {
         { japanese: 'オクルージョン', romaji: 'okuruujon' }, { japanese: 'パースペクティブ', romaji: 'paasupekutibu' },
         { japanese: 'プリミティブ', romaji: 'purimitibu' }, { japanese: 'リフレクション', romaji: 'rifurekushon' },
         { japanese: 'スケール', romaji: 'sukeeru' }, { japanese: 'タイル', romaji: 'tairu' },
-        { japanese: 'ビューポート', romaji: 'byuupooto' }
+        { japanese: 'ビューポート', romaji: 'byuupooto' },
+        { japanese: 'アセットパイプライン', romaji: 'asettopaipurain' },
+        { japanese: 'インスタンス', romaji: 'insutansu' },
+        { japanese: 'エクストルード', romaji: 'ekusutoruudo' },
+        { japanese: 'オクルージョンカリング', romaji: 'okuruujonkaringu' },
+        { japanese: 'カプセル', romaji: 'kapuseru' },
+        { japanese: 'キネマティクス', romaji: 'kinematikusu' },
+        { japanese: 'グローバルイルミネーション', romaji: 'guroobaruirumineeshon' },
+        { japanese: 'コンストレイント', romaji: 'konsutoreinto' },
+        { japanese: 'サーフェスモデリング', romaji: 'saafesumoderingu' },
+        { japanese: 'ジオメトリ', romaji: 'jiometori' },
+        { japanese: 'シンメトリ', romaji: 'shinmetori' },
+        { japanese: 'スイープ', romaji: 'suiipu' },
+        { japanese: 'スプライン', romaji: 'supurain' },
+        { japanese: 'セルシェーディング', romaji: 'serushieedingu' },
+        { japanese: 'テッセレーション', romaji: 'tessereeshon' },
+        { japanese: 'デフォーメーション', romaji: 'defoomeeshon' },
+        { japanese: 'トゥーンシェーディング', romaji: 'tuunshieedingu' },
+        { japanese: 'ドープシート', romaji: 'doopushiito' },
+        { japanese: 'ナーバス', romaji: 'naabasu' },
+        { japanese: 'ノンリニアアニメーション', romaji: 'nonriniaanimeeshon' },
+        { japanese: 'ハードサーフェス', romaji: 'haadosaafesu' },
+        { japanese: 'ハイトフィールド', romaji: 'haitofiirudo' },
+        { japanese: 'バンプマッピング', romaji: 'banpumappingu' },
+        { japanese: 'ピボットポイント', romaji: 'pibottopointo' },
+        { japanese: 'フィレット', romaji: 'firetto' },
+        { japanese: 'フォトンマッピング', romaji: 'fotonmappingu' },
+        { japanese: 'ベイク', romaji: 'beiku' },
+        { japanese: 'ベジェカーブ', romaji: 'bejiekaabu' },
+        { japanese: 'ヘアーシステム', romaji: 'heaashisutemu' },
+        { japanese: 'ボリュームレンダリング', romaji: 'boryuumurendaringu' },
+        { japanese: 'マーカー', romaji: 'maakaa' },
+        { japanese: 'マッスルスシステム', romaji: 'massurusushisutemu' },
+        { japanese: 'ミップマッピング', romaji: 'mippumappingu' },
+        { japanese: 'モーフィング', romaji: 'moofingu' },
+        { japanese: 'モーションパス', romaji: 'mooshonpasu' },
+        { japanese: 'ラティス', romaji: 'ratisu' },
+        { japanese: 'リトポロジー', romaji: 'ritoporojii' },
+        { japanese: 'レベルオブディテール', romaji: 'reberuobuditeeru' },
+        { japanese: 'レイディオシティ', romaji: 'reidioshiti' },
+        { japanese: 'ロフト', romaji: 'rofuto' },
+        { japanese: 'ウェイトペイント', romaji: 'weitopeinto' },
+        { japanese: 'クロスシミュレーション', romaji: 'kuroshushimyureeshon' },
+        { japanese: 'デジタルクレイ', romaji: 'dejitarukurei' },
+        { japanese: 'フローマップ', romaji: 'furoomappu' },
+        { japanese: 'プロップ', romaji: 'puroppu' },
+        { japanese: 'メッシュスムージング', romaji: 'messhusumuujingu' },
+        { japanese: 'リバースキネマティクス', romaji: 'ribaasukinematikusu' },
+        { japanese: 'サブサーフェススキャタリング', romaji: 'sabusāfesusukyattaringu' },
+        { japanese: 'アンラップ', romaji: 'anrappu' },
+        { japanese: '頂点法線', romaji: 'choutenhoosen' }
     ];
 
     // Initialize Hiragana word lists dynamically
@@ -133,6 +269,11 @@ const sketch = (p) => {
     let isMobile = false;
     let gameStats = { wordsTyped: 0, totalKeystrokes: 0, correctKeystrokes: 0, totalCharsTyped: 0, correctCharsTyped: 0 };
 
+    // Flick input variables
+    let flickKeyboardLayout = [];
+    let isFlickInputActive = false;
+    let touchState = { startX: 0, startY: 0, currentKey: null, isFlicking: false, lastTapTime: 0, doubleTapDelay: 300 };
+
     let sounds = {
         type: null, correct: null, word_complete: null, wrong: null,
         combo_increase: null, combo_break: null, click: null, bgm: null
@@ -148,7 +289,7 @@ const sketch = (p) => {
         ],
         keyStates: {}, // To store highlight time for each key
         keyWidth: 0, keyHeight: 0, startX: 0, startY: 0, padding: 2,
-        highlightDuration: 15 // frames
+        highlightDuration: 20 // frames
     };
 
     // Screen Shake Effect
@@ -174,9 +315,9 @@ const sketch = (p) => {
             p.stroke(100); p.strokeWeight(2);
             p.rect(this.x, this.y, this.w, this.h, 10);
             p.fill(50); p.textAlign(p.CENTER, p.CENTER);
-            let textSize = Math.min(this.h * 0.4, 24);
-            if (this.icon) textSize = Math.min(this.h * 0.5, 30);
-            p.textSize(textSize);
+            let baseTextSize = Math.min(this.h * 0.38, 22); // Slightly reduced for regular text
+            if (this.icon) baseTextSize = Math.min(this.h * 0.45, 28); // Slightly reduced for icon
+            p.textSize(baseTextSize);
             p.text(this.icon ? this.icon : this.text, this.x + this.w / 2, this.y + this.h / 2);
         }
     }
@@ -233,24 +374,25 @@ const sketch = (p) => {
 
         draw() {
             if (!this.isActive) return;
-            let currentAlpha = this.isCleared ? this.alpha : (this.missTyped ? 180 : 220);
+            let currentAlpha = this.isCleared ? this.alpha : (this.missTyped ? 200 : 240); // Increased opacity
             let bgColor = this.highlightTime > 0 ? p.color(255, 255, 150, currentAlpha) : p.color(255, 255, 255, currentAlpha);
             p.fill(bgColor);
             p.stroke(100, currentAlpha); p.strokeWeight(2);
-            const rectWidth = Math.max(150, p.textWidth(this.japanese) + 40, p.textWidth(this.romaji) + 40);
-            p.rect(this.x - 10, this.y - 25, rectWidth, 50, 10);
+            // Adjust rectWidth calculation if text sizes change significantly, for now it should be okay.
+            const rectWidth = Math.max(160, p.textWidth(this.japanese) + 50, p.textWidth(this.romaji) + 50); // Slightly increased base width
+            p.rect(this.x - 10, this.y - 28, rectWidth, 56, 10); // Slightly increased height and adjusted y
 
             p.fill(50, this.alpha); p.textAlign(p.LEFT);
-            p.textSize(16); p.text(this.japanese, this.x, this.y - 5);
+            p.textSize(18); p.text(this.japanese, this.x, this.y - 7); // Adjusted y for new text size & rect
 
-            p.textSize(14);
+            p.textSize(16); // Increased Romaji text size
             if (this.typedLength > 0) {
                 p.fill(0, 150, 0, this.alpha);
                 p.text(this.romaji.substring(0, this.typedLength), this.x, this.y + 15);
             }
             p.fill(this.missTyped ? p.color(200,0,0, this.alpha) : p.color(50, this.alpha));
             let typedWidth = p.textWidth(this.romaji.substring(0, this.typedLength));
-            p.text(this.romaji.substring(this.typedLength), this.x + typedWidth, this.y + 15);
+            p.text(this.romaji.substring(this.typedLength), this.x + typedWidth, this.y + 17); // Adjusted y for new text size & rect
         }
 
         isFullyTypedBy(input) { return !this.isCleared && this.romaji === input; }
@@ -332,6 +474,22 @@ const sketch = (p) => {
             }
         );
         settingsScreenButtons.push(soundToggle); currentY += itemSpacing;
+
+        if (isMobile) {
+            const flickToggle = new ToggleButton(centerX, currentY, buttonWidth, buttonHeight, "入力: フリック", "入力: QWERTY", isFlickInputActive,
+                function() {
+                    isFlickInputActive = this.isOn;
+                    if (isFlickInputActive) {
+                        if (flickKeyboardLayout.length === 0) createFlickKeyboard(); // Ensure layout exists
+                        isVirtualKeyboardVisible = false; // Hide QWERTY if flick is active
+                    } else {
+                        isVirtualKeyboardVisible = true; // Show QWERTY if flick is inactive
+                    }
+                }
+            );
+            settingsScreenButtons.push(flickToggle); currentY += itemSpacing;
+        }
+
         settingsScreenButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "もどる", () => { gameState = GAME_STATES.MENU; }));
 
         pauseMenuButtons.length = 0;
@@ -373,15 +531,30 @@ const sketch = (p) => {
         const clearKeyWidth = width * 0.6; const spacebarY = startY + keys.length * (keySize + padding) + padding;
         
         let lastKeyInThirdRow = virtualKeyboard[virtualKeyboard.length-1]; // 'm' key
+        let lastKeyInSecondRow = virtualKeyboard[virtualKeyboard.length-1 - (keys[2].length)]; // 'l' key
+
         virtualKeyboard.push({
             key: 'backspace', label: '←',
             x: lastKeyInThirdRow.x + keySize + padding, 
             y: lastKeyInThirdRow.y,
             width: backspaceWidth, height: specialKeyHeight
         });
+
+        // Add 'フリック' (Flick) toggle key to QWERTY
+        const flickToggleKeyWidth = keySize * 2;
         virtualKeyboard.push({
-            key: 'clear', label: '消去', x: (width - clearKeyWidth) / 2, y: spacebarY,
-            width: clearKeyWidth, height: specialKeyHeight
+            key: 'toggle_flick', label: 'フリック',
+            x: (width - clearKeyWidth) / 2 - flickToggleKeyWidth - padding, // Position left of clear key
+            y: spacebarY,
+            width: flickToggleKeyWidth, height: specialKeyHeight
+        });
+
+        virtualKeyboard.push({
+            key: 'clear', label: '消去',
+            x: (width - clearKeyWidth) / 2 , // Original X for clear key
+            y: spacebarY,
+            width: clearKeyWidth - flickToggleKeyWidth - padding, // Adjust width of clear key
+            height: specialKeyHeight
         });
     }
 
@@ -392,6 +565,128 @@ const sketch = (p) => {
         const firstRowWidth = keyboardOverlay.layout[0].length * (keyboardOverlay.keyWidth + keyboardOverlay.padding) - keyboardOverlay.padding;
         keyboardOverlay.startX = (width - firstRowWidth) / 2;
         keyboardOverlay.startY = height - (keyboardOverlay.layout.length * (keyboardOverlay.keyHeight + keyboardOverlay.padding) + keyboardOverlay.keyHeight * 0.5); // Position higher
+    }
+
+    function createFlickKeyboard() {
+        flickKeyboardLayout = [];
+        const keyRows = 4;
+        const mainKeyCols = 3;
+        const utilityKeyCols = 1; // For ABC, backspace, clear etc.
+
+        const availableHeight = height * 0.4; // Max 40% of screen for keyboard
+        const yPadding = 10;
+        let keyHeight = (availableHeight - (keyRows - 1) * yPadding) / keyRows;
+
+        const availableWidth = width;
+        const xPadding = 5;
+        let keyWidth = (availableWidth - (mainKeyCols + utilityKeyCols -1) * xPadding ) / (mainKeyCols + utilityKeyCols);
+
+        // Make keys squarish, but prioritize height calculation for screen fit.
+        keyHeight = Math.min(keyHeight, keyWidth * 1.2); // Ensure keys are not too tall
+        keyWidth = Math.min(keyWidth, keyHeight * 1.2); // Ensure keys are not too wide
+
+        const totalKeyboardActualWidth = (mainKeyCols * keyWidth) + ((mainKeyCols -1) * xPadding) + keyWidth + xPadding; // Main 3 cols + 1 utility col
+        const startX = (width - totalKeyboardActualWidth) / 2;
+        const totalFlickKeyboardHeight = (keyRows * keyHeight) + ((keyRows - 1) * yPadding);
+        const startY = height - totalFlickKeyboardHeight - 10; // 10px padding from bottom
+
+        const keysDef = [
+            { label: 'あ', id: 'a_row', flicks: { center: 'あ', left: 'い', up: 'う', right: 'え', down: 'お' } },
+            { label: 'か', id: 'ka_row', flicks: { center: 'か', left: 'き', up: 'く', right: 'け', down: 'こ' } },
+            { label: 'さ', id: 'sa_row', flicks: { center: 'さ', left: 'し', up: 'す', right: 'せ', down: 'そ' } },
+            { label: 'た', id: 'ta_row', flicks: { center: 'た', left: 'ち', up: 'つ', right: 'て', down: 'と' } },
+            { label: 'な', id: 'na_row', flicks: { center: 'な', left: 'に', up: 'ぬ', right: 'ね', down: 'の' } },
+            { label: 'は', id: 'ha_row', flicks: { center: 'は', left: 'ひ', up: 'ふ', right: 'へ', down: 'ほ' } },
+            { label: 'ま', id: 'ma_row', flicks: { center: 'ま', left: 'み', up: 'む', right: 'め', down: 'も' } },
+            { label: 'や', id: 'ya_row', flicks: { center: 'や', left: 'ゃ', up: 'ゆ', right: 'ゅ', down: 'よ', centerAlt: 'ょ'} }, // Added smalls
+            { label: 'ら', id: 'ra_row', flicks: { center: 'ら', left: 'り', up: 'る', right: 'れ', down: 'ろ' } },
+            { label: 'わ', id: 'wa_row', flicks: { center: 'わ', left: 'を', up: 'ん', down: 'ー' } }, // Added long vowel mark
+            { label: '小', id: 'small_kana', flicks: { center: 'っ', left: 'ゃ', up: 'ゅ', right: 'ょ', down: 'ぇ'} },
+            { label: '゛゜', id: 'dakuten_handakuten', flicks: { center: '゛', up: '゜'} }
+        ];
+
+        let currentX = startX;
+        let currentY = startY;
+        let keysInRow = 0;
+
+        for (let i = 0; i < keysDef.length; i++) {
+            flickKeyboardLayout.push({
+                ...keysDef[i],
+                x: currentX, y: currentY, w: keyWidth, h: keyHeight
+            });
+            keysInRow++;
+            currentX += keyWidth + padding;
+            if (keysInRow >= numCols) {
+                keysInRow = 0;
+                currentX = startX;
+                currentY += keyHeight + padding;
+            }
+        }
+
+        // Add utility keys (Backspace, Clear) in a separate column or row
+        currentY = startY; // Reset Y for utility column (example)
+        currentX = startX + (numCols * (keyWidth + padding)); // Position to the right of main keys
+
+        flickKeyboardLayout.push({ label: '←', id: 'backspace', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'backspace' } });
+        currentY += keyHeight + padding;
+        flickKeyboardLayout.push({ label: '消去', id: 'clear', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'clear' } });
+        currentY += keyHeight + padding;
+        // Example: Add a dedicated small tsu key if needed, though "小" covers it.
+        // flickKeyboardLayout.push({ label: 'っ', id: 'small_tsu', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'っ'} });
+        // currentY += keyHeight + padding;
+        flickKeyboardLayout.push({ label: 'ABC', id: 'toggle_qwerty', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'toggle_qwerty' } });
+
+
+    }
+
+    function drawFlickKeyboard() {
+        // flickKeyboardLayout.push({ label: 'あ', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'あ' } });
+    }
+
+    function drawFlickKeyboard() {
+        if (flickKeyboardLayout.length === 0 && isMobile && isFlickInputActive) { // Ensure layout is created if needed
+            createFlickKeyboard();
+        }
+        if (flickKeyboardLayout.length === 0) return;
+
+
+        for (const key of flickKeyboardLayout) {
+            p.fill(230, 230, 230, 220);
+            p.stroke(150);
+            p.strokeWeight(1);
+            p.rect(key.x, key.y, key.w, key.h, 8);
+            p.fill(30);
+            p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(Math.min(key.w, key.h) * 0.35); // Adjusted for potentially smaller keys / more text
+            p.text(key.label, key.x + key.w / 2, key.y + key.h / 2);
+
+            if (touchState.isFlicking && touchState.currentKey === key) {
+                p.fill(0, 0, 0, 100); // Dark overlay on main key
+                p.rect(key.x, key.y, key.w, key.h, 8);
+
+                // Draw flick hints
+                p.textSize(Math.min(key.w, key.h) * 0.3);
+                const flickHintOffsetX = key.w * 0.7;
+                const flickHintOffsetY = key.h * 0.7;
+
+                if (key.flicks.up) {
+                    p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w / 2, key.y - flickHintOffsetY, key.w*0.6, key.h*0.6);
+                    p.fill(255); p.text(key.flicks.up, key.x + key.w / 2, key.y - flickHintOffsetY);
+                }
+                if (key.flicks.down) {
+                     p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w / 2, key.y + key.h + flickHintOffsetY, key.w*0.6, key.h*0.6);
+                    p.fill(255); p.text(key.flicks.down, key.x + key.w / 2, key.y + key.h + flickHintOffsetY);
+                }
+                if (key.flicks.left) {
+                     p.fill(50, 100, 200, 200); p.ellipse(key.x - flickHintOffsetX, key.y + key.h / 2, key.w*0.6, key.h*0.6);
+                    p.fill(255); p.text(key.flicks.left, key.x - flickHintOffsetX, key.y + key.h / 2);
+                }
+                if (key.flicks.right) {
+                     p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w + flickHintOffsetX, key.y + key.h / 2, key.w*0.6, key.h*0.6);
+                    p.fill(255); p.text(key.flicks.right, key.x + key.w + flickHintOffsetX, key.y + key.h / 2);
+                }
+            }
+        }
     }
     
     function playSound(soundObj, volume = 1.0) {
@@ -485,7 +780,10 @@ const sketch = (p) => {
         isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         loadHighScores();
         createButtons();
-        if (isMobile) createVirtualKeyboard();
+        if (isMobile) {
+            createVirtualKeyboard();
+            createFlickKeyboard(); // Pre-calculate flick keyboard layout as well
+        }
         initKeyboardOverlay(); 
     };
 
@@ -564,7 +862,7 @@ const sketch = (p) => {
 
             for (let keyChar of row) {
                 const isHighlighted = keyboardOverlay.keyStates[keyChar] && keyboardOverlay.keyStates[keyChar] > 0;
-                p.fill(isHighlighted ? p.color(255, 255, 0, 200) : p.color(50, 50, 50, 150));
+                p.fill(isHighlighted ? p.color(0, 255, 0, 220) : p.color(50, 50, 50, 150));
                 p.stroke(200, 150); p.strokeWeight(1);
                 p.rect(currentX, currentY, keyboardOverlay.keyWidth, keyboardOverlay.keyHeight, 3);
                 
@@ -597,7 +895,13 @@ const sketch = (p) => {
         }
         drawGamePlayUI();
         drawInputArea();
-        if (isMobile && isVirtualKeyboardVisible) drawVirtualKeyboard();
+        if (isMobile) {
+            if (isFlickInputActive) {
+                drawFlickKeyboard();
+            } else if (isVirtualKeyboardVisible) { // Only draw QWERTY if flick is not active AND it's set to visible
+                drawVirtualKeyboard();
+            }
+        }
     }
 
     function drawGamePlayUI() {
@@ -618,29 +922,115 @@ const sketch = (p) => {
         if (gameplayPauseButton) gameplayPauseButton.draw();
 
         p.textAlign(p.CENTER); p.textSize(16); p.fill(255,255,255,180);
-        const textYPos = height - (isMobile && isVirtualKeyboardVisible ? (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 + 70 : 80);
-        if (!isMobile) { 
-             const keyboardOverlayHeight = keyboardOverlay.layout.length * (keyboardOverlay.keyHeight + keyboardOverlay.padding) + keyboardOverlay.keyHeight * 0.5;
-             p.text('落下する単語のローマ字を入力！', width / 2, keyboardOverlay.startY - 30);
+        // Standardized spacing for instruction text
+        const mobileKeyboardHeight = (isMobile && isVirtualKeyboardVisible) ? (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 : 0;
+        const instructionTextY = isMobile ? height - mobileKeyboardHeight - 50 - 20 : keyboardOverlay.startY - 30; // 50 for input area, 20 for padding
+
+        if (!isMobile) {
+             p.text('落下する単語のローマ字を入力！', width / 2, instructionTextY);
         } else {
-             p.text('落下する単語のローマ字を入力！', width / 2, textYPos);
+             // On mobile, ensure textYPos is clearly above the input area which is above the virtual keyboard (if visible)
+             const inputAreaHeight = 40; // from drawInputArea
+             const spaceAboveInputArea = 20; // Desired space
+             let calculatedTextYPos = height - mobileKeyboardHeight - inputAreaHeight - spaceAboveInputArea - (p.textSize() / 2);
+             if (mobileKeyboardHeight === 0) { // If virtual keyboard is not visible, position it relative to bottom
+                calculatedTextYPos = height - inputAreaHeight - spaceAboveInputArea - 20; // Extra padding from bottom
+             }
+             p.text('落下する単語のローマ字を入力！', width / 2, calculatedTextYPos);
         }
     }
 
     function drawInputArea() {
         const inputAreaHeight = 40;
         let inputAreaY;
-        if (isMobile && isVirtualKeyboardVisible) {
-            inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
-        } else if (!isMobile) {
-            inputAreaY = keyboardOverlay.startY - inputAreaHeight - 10;
-        } else {
-            inputAreaY = height - inputAreaHeight - 20;
+        const inputAreaPadding = 10;
+
+        if (isMobile) {
+            if (isFlickInputActive) {
+                const keyRowsInFlick = 4; // As defined in createFlickKeyboard
+                const yPaddingInFlick = 10; // As defined in createFlickKeyboard
+                // Estimate flick key height (it might vary slightly based on width constraints)
+                const estimatedAvailableHeight = height * 0.4;
+                let flickKeyHeight = (estimatedAvailableHeight - (keyRowsInFlick - 1) * yPaddingInFlick) / keyRowsInFlick;
+                flickKeyHeight = Math.min(flickKeyHeight, (width / (3+1)) * 1.2); // Approximation from createFlickKeyboard logic
+
+                const totalFlickKeyboardH = (keyRowsInFlick * flickKeyHeight) + ((keyRowsInFlick - 1) * yPaddingInFlick);
+                const flickKeyboardActualStartY = height - totalFlickKeyboardH - 10; // 10 is bottom padding
+                inputAreaY = flickKeyboardActualStartY - inputAreaHeight - inputAreaPadding;
+            } else if (isVirtualKeyboardVisible) { // QWERTY visible
+                const qwertyKeySize = Math.min(width / 11, 45);
+                const qwertyPadding = Math.max(2, qwertyKeySize * 0.05);
+                const totalQwertyHeight = (qwertyKeySize + qwertyPadding) * 3 + qwertyKeySize; // 3 rows + spacebar row approximation
+                inputAreaY = height - totalQwertyHeight - inputAreaHeight - inputAreaPadding - 40; // Extra 40 for better spacing
+            } else { // No keyboard visible
+                inputAreaY = height - inputAreaHeight - 20; // Default position near bottom
+            }
+        } else { // Not mobile (PC)
+            inputAreaY = keyboardOverlay.startY - inputAreaHeight - inputAreaPadding;
         }
         p.fill(255, 255, 255, 200); p.stroke(100); p.strokeWeight(2);
-        p.rect(width / 2 - 150, inputAreaY, 300, inputAreaHeight, 10);
-        p.fill(50); p.textAlign(p.CENTER, p.CENTER); p.textSize(18);
-        p.text(currentInput, width / 2, inputAreaY + inputAreaHeight / 2);
+        const inputRectWidth = 300;
+        p.rect(width / 2 - inputRectWidth / 2, inputAreaY, inputRectWidth, inputAreaHeight, 10);
+
+        p.textSize(18);
+        let currentX = width / 2 - p.textWidth(currentInput) / 2; // Start drawing from a centered position
+        const centerY = inputAreaY + inputAreaHeight / 2;
+
+        let overallCorrect = true; // Assume correct until a mismatch is found for all words
+        if (currentInput.length > 0) {
+            let anyWordMatchesPrefix = false;
+            for (const word of words) {
+                if (!word.isCleared && word.romaji.startsWith(currentInput)) {
+                    anyWordMatchesPrefix = true;
+                    break;
+                }
+            }
+            overallCorrect = anyWordMatchesPrefix;
+        }
+
+        for (let i = 0; i < currentInput.length; i++) {
+            const char = currentInput[i];
+            let charIsCorrect = false;
+
+            if (overallCorrect) { // If the whole currentInput is a prefix of at least one word, all chars up to this point are "correct" in that context
+                 charIsCorrect = true;
+            } else {
+                // If currentInput as a whole is not a prefix, check char by char for the first point of deviation
+                // This logic is tricky because a char might be "correct" for one word's prefix but "incorrect" for another.
+                // The simplest visual feedback is to color based on the `overallCorrect` status determined above.
+                // A more granular per-char check against all words could be too complex or visually noisy.
+                // Let's stick to: if the whole string is a valid prefix for *any* word, all typed chars are green.
+                // Otherwise, the point where it deviates (or all if no prefix matches) becomes red.
+
+                // For simplicity, if overallCorrect is false, we'll mark the character that broke the pattern as red.
+                // This means we need to find the length of the longest common prefix among all words for the current input.
+                let longestMatchLength = 0;
+                for (const word of words) {
+                    if (!word.isCleared) {
+                        let matchLen = 0;
+                        while(matchLen < currentInput.length && matchLen < word.romaji.length && currentInput[matchLen] === word.romaji[matchLen]) {
+                            matchLen++;
+                        }
+                        if (matchLen > longestMatchLength) {
+                            longestMatchLength = matchLen;
+                        }
+                    }
+                }
+                if (i < longestMatchLength) {
+                    charIsCorrect = true;
+                } else {
+                    charIsCorrect = false;
+                }
+            }
+
+            if (charIsCorrect) {
+                p.fill(0, 150, 0); // Green for correct
+            } else {
+                p.fill(200, 0, 0); // Red for incorrect
+            }
+            p.text(char, currentX, centerY);
+            currentX += p.textWidth(char);
+        }
     }
 
     function drawVirtualKeyboard() {
@@ -654,8 +1044,8 @@ const sketch = (p) => {
     }
     function drawMenu() {
         p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(36, width / 10)); p.text('CGモデリング', width / 2, height / 4 - 40);
-        p.textSize(Math.min(32, width / 12)); p.text('タイピングゲーム NEO', width / 2, height / 4);
+        p.textSize(Math.min(36, width / 10)); p.text('CGモデリング', width / 2, height / 4 - 50); // Adjusted for spacing
+        p.textSize(Math.min(32, width / 12)); p.text('タイピングゲーム NEO', width / 2, height / 4 -10); // Adjusted for spacing
         p.textSize(12); p.textAlign(p.RIGHT); p.fill(255, 255, 255, 150);
         p.text(GAME_VERSION, width - 10, height - 10);
 
@@ -663,7 +1053,7 @@ const sketch = (p) => {
         let modeText = wordMode === 'katakana' ? 'カタカナ' : (wordMode === 'hiragana' ? 'ひらがな' : 'ミックス');
         let diffText = difficulty === 'easy' ? 'かんたん' : (difficulty === 'normal' ? 'ふつう' : (difficulty === 'hard' ? 'むずかしい' : 'チュートリアル'));
         p.fill(255); p.textAlign(p.CENTER);
-        p.text(`モード: ${modeText} / 難易度: ${diffText}`, width / 2, height / 4 + 50);
+        p.text(`モード: ${modeText} / 難易度: ${diffText}`, width / 2, height / 4 + 30); // Adjusted for spacing
         for (const button of menuButtons) button.draw();
     }
     function drawSettings() {
@@ -672,7 +1062,7 @@ const sketch = (p) => {
         const drawSettingButtonWithSelection = (button, isSelected) => button.draw(isSelected);
         
         p.fill(255); p.textSize(20); p.textAlign(p.CENTER);
-        if (modeSettingButtons.length > 0) p.text("表示モード", width/2, modeSettingButtons[0].y - 35);
+        if (modeSettingButtons.length > 0) p.text("表示モード", width/2, modeSettingButtons[0].y - 30); // Adjusted offset
         for (const button of modeSettingButtons) {
             drawSettingButtonWithSelection(button,
                 (button.text.includes('カタカナ') && wordMode === 'katakana') ||
@@ -680,7 +1070,7 @@ const sketch = (p) => {
                 (button.text.includes('ミックス') && wordMode === 'mixed')
             );
         }
-        if (difficultySettingButtons.length > 0) p.text("難易度", width/2, difficultySettingButtons[0].y - 35);
+        if (difficultySettingButtons.length > 0) p.text("難易度", width/2, difficultySettingButtons[0].y - 30); // Adjusted offset
         for (const button of difficultySettingButtons) {
             drawSettingButtonWithSelection(button,
                 (button.text === 'かんたん' && difficulty === 'easy') ||
@@ -738,43 +1128,65 @@ const sketch = (p) => {
         p.text('ふつう: ' + (highScores.normal || 0), width / 2, height / 4 + 110);
         p.text('むずかしい: ' + (highScores.hard || 0), width / 2, height / 4 + 150);
         const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-        const backButton = new Button(width/2 - buttonWidth/2, height/2 + 120, buttonWidth, buttonHeight, 'もどる', () => { gameState = GAME_STATES.MENU; });
+        const backButtonY = height / 4 + 150 + buttonHeight + 20; // Position relative to last text
+        const backButton = new Button(width/2 - buttonWidth/2, backButtonY, buttonWidth, buttonHeight, 'もどる', () => { gameState = GAME_STATES.MENU; });
         backButton.draw();
     }
     function drawTutorialScreen() {
-        if (difficulty === 'tutorial') drawGameScreen();
-        p.fill(0,0,0,190); p.rect(0,0,width,height); 
+        // Call drawGameScreen elements for background consistency, but overlay tutorial content
+        if (difficulty === 'tutorial') {
+             // Simplified drawGameScreen content for tutorial background
+            if (p.millis() - lastSpawnTime > SPAWN_INTERVALS[difficulty]) { /* ... word spawning ... */ }
+            for (let i = words.length - 1; i >= 0; i--) { words[i].update(); words[i].draw(); if (!words[i].isActive) words.splice(i, 1); }
+            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].isDead()) particles.splice(i, 1); }
+            drawGamePlayUI(); // Draw score, time, etc.
+            drawInputArea();  // Draw input area
+            if (isMobile) { // Keyboard logic for tutorial screen
+                if (isFlickInputActive) {
+                    drawFlickKeyboard();
+                } else if (isVirtualKeyboardVisible) {
+                    drawVirtualKeyboard();
+                }
+            }
+        }
+        p.fill(0,0,0,190); p.rect(0,0,width,height); // Tutorial overlay
 
         p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(28, width/12)); p.text('チュートリアル', width / 2, height / 6);
+        p.textSize(Math.min(28, width/12)); p.text('チュートリアル', width / 2, height / 5); // Adjusted Y for title
         p.textSize(Math.min(18, width / 23));
         let tutorialText = [];
+        let textBlockYStart = height / 5 + 70; // Start Y for the text block, give more space after title
+        let lineHeight = 30; // Reduced line height for potentially more text
+
         if (tutorialStep === 0) {
             tutorialText = [
                 'タイピングゲームNEOへようこそ！',
                 '画面上から落ちてくる単語のローマ字を正確に入力します。',
-                '例:「ポリゴン」→「porigon」。画面下のキーボードが光って補助します(PC)。',
-                '（このチュートリアル中はカタカナモード・かんたん設定です）'
+                '例:「ポリゴン」→「porigon」。',
+                '画面下のキーボードが光って補助します(PC)。',
+                '（このチュートリアル中はカタカナ・かんたん設定です）'
             ];
         } else if (tutorialStep === 1) {
             tutorialText = [
                 '正確な入力でスコア獲得。連続成功でコンボボーナス！',
-                'タイプミスや単語を見逃すとコンボが途切れます (効果音あり)。',
+                'タイプミスや単語を見逃すとコンボが途切れます。',
                 '単語を完成させると効果音と共にエフェクトが発生します。',
                 '制限時間内にハイスコアを目指しましょう！'
             ];
         } else if (tutorialStep === 2) {
              tutorialText = [
                 '設定で難易度や表示モード(カタカナ/ひらがな/ミックス)を変更可能。',
-                'サウンドのオン/オフも設定できます。ローカルに効果音ファイルが必要です。',
+                'サウンドのオン/オフも設定できます。(効果音ファイル要)',
                 '準備ができたらメインメニューからスタート！健闘を祈ります！'
             ];
         } else { returnToMenu(); return; }
 
-        for(let i=0; i < tutorialText.length; i++) p.text(tutorialText[i], width / 2, height / 3 + i * 35);
+        for(let i=0; i < tutorialText.length; i++) p.text(tutorialText[i], width / 2, textBlockYStart + i * lineHeight);
+
         const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+        const nextButtonY = textBlockYStart + tutorialText.length * lineHeight + 35; // Position below text block with a bit more padding
         const nextButtonText = tutorialStep < 2 ? '次へ' : 'メニューへ';
-        const tutorialNextButton = new Button(width/2 - buttonWidth/2, height * 3/4 + 30, buttonWidth, buttonHeight, nextButtonText, () => {
+        const tutorialNextButton = new Button(width/2 - buttonWidth/2, nextButtonY, buttonWidth, buttonHeight, nextButtonText, () => {
             if (tutorialStep < 2) {
                 tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = []; }
             } else returnToMenu();
@@ -871,6 +1283,20 @@ const sketch = (p) => {
             if (!buttonClickedSoundPlayed) { playSound(sounds.click); buttonClickedSoundPlayed = true; }
         };
 
+        // Priority handling for flick input if active
+        if (isMobile && isFlickInputActive && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
+            for (const keyObj of flickKeyboardLayout) {
+                if (mouseX >= keyObj.x && mouseX <= keyObj.x + keyObj.w && mouseY >= keyObj.y && mouseY <= keyObj.y + keyObj.h) {
+                    touchState.startX = mouseX;
+                    touchState.startY = mouseY;
+                    touchState.currentKey = keyObj;
+                    touchState.isFlicking = true; // Tentatively start flicking
+                    if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL)) p.loop(); // Ensure draw updates for feedback if paused
+                    return false; // Consume this press
+                }
+            }
+        }
+
         if (gameState === GAME_STATES.MENU) {
             for (const button of menuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
         } else if (gameState === GAME_STATES.SETTINGS) {
@@ -885,51 +1311,189 @@ const sketch = (p) => {
             }
         } else if (gameState === GAME_STATES.HIGHSCORES) {
             const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-            const backButton = { x: width/2 - buttonWidth/2, y: height/2 + 120, w: buttonWidth, h: buttonHeight};
-            if (mouseX >= backButton.x && mouseX <= backButton.x + backButton.w && mouseY >= backButton.y && mouseY <= backButton.y + backButton.h) {
+            const backButtonY = height / 4 + 150 + buttonHeight + 20; // from drawHighScores
+            const backButtonRect = { x: width/2 - buttonWidth/2, y: backButtonY, w: buttonWidth, h: buttonHeight};
+            if (mouseX >= backButtonRect.x && mouseX <= backButtonRect.x + backButtonRect.w && mouseY >= backButtonRect.y && mouseY <= backButtonRect.y + backButtonRect.h) {
                 generalButtonClick(); gameState = GAME_STATES.MENU; return false;
             }
         } else if (gameState === GAME_STATES.TUTORIAL) {
             if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
-            const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-            const nextButton = {x: width/2 - buttonWidth/2, y: height * 3/4 + 30, w: buttonWidth, h: buttonHeight};
-            if (mouseX >= nextButton.x && mouseX <= nextButton.x + nextButton.w && mouseY >= nextButton.y && mouseY <= nextButton.y + nextButton.h) {
-                generalButtonClick();
-                if (tutorialStep < 2) { tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = [];}} else returnToMenu();
-                return false;
+
+            // Check tutorial's own next button first if not currently flicking
+            if (!touchState.isFlicking) {
+                const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
+                const textBlockYStart = height / 5 + 70; const lineHeight = 30;
+                let tutorialTextLength = 0;
+                if (tutorialStep === 0) tutorialTextLength = 5;
+                else if (tutorialStep === 1) tutorialTextLength = 4;
+                else tutorialTextLength = 3;
+                const nextButtonY = textBlockYStart + tutorialTextLength * lineHeight + 35;
+                const nextButtonRect = {x: width/2 - buttonWidth/2, y: nextButtonY, w: buttonWidth, h: buttonHeight};
+
+                if (mouseX >= nextButtonRect.x && mouseX <= nextButtonRect.x + nextButtonRect.w && mouseY >= nextButtonRect.y && mouseY <= nextButtonRect.y + nextButtonRect.h) {
+                    generalButtonClick();
+                    if (tutorialStep < 2) { tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = [];}} else returnToMenu();
+                    return false;
+                }
             }
-            handleMobileGameTouch(mouseX, mouseY);
+             // If not flicking on a key, or if flick is not active, allow other game touch (like input area)
+            if (!isFlickInputActive || !touchState.currentKey) { // if flick is active, currentKey would be set if a flick key was pressed
+                 if (handleMobileGameTouch(mouseX, mouseY) === false) return false;
+            }
+
         } else if (gameState === GAME_STATES.PLAYING) {
             if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
-            handleMobileGameTouch(mouseX, mouseY);
+            if (!isFlickInputActive || !touchState.currentKey) {
+                if (handleMobileGameTouch(mouseX, mouseY) === false) return false;
+            }
+
         } else if (gameState === GAME_STATES.PAUSED) {
             for (const button of pauseMenuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
         } else if (gameState === GAME_STATES.RESULTS) {
             p.loop(); 
             const buttonWidth = Math.min(250, width - 60); const buttonHeight = Math.min(50, height/12);
-            const playAgainButton = {x: width/2 - buttonWidth/2, y: height * 0.75, w: buttonWidth, h: buttonHeight};
-            const menuButton = {x: width/2 - buttonWidth/2, y: height * 0.75 + buttonHeight + 15, w: buttonWidth, h: buttonHeight};
-            if (mouseX >= playAgainButton.x && mouseX <= playAgainButton.x + playAgainButton.w && mouseY >= playAgainButton.y && mouseY <= playAgainButton.y + playAgainButton.h) {
+            const playAgainButtonRect = {x: width/2 - buttonWidth/2, y: height * 0.75, w: buttonWidth, h: buttonHeight};
+            const menuButtonRect = {x: width/2 - buttonWidth/2, y: height * 0.75 + buttonHeight + 15, w: buttonWidth, h: buttonHeight};
+            if (mouseX >= playAgainButtonRect.x && mouseX <= playAgainButtonRect.x + playAgainButtonRect.w && mouseY >= playAgainButtonRect.y && mouseY <= playAgainButtonRect.y + playAgainButtonRect.h) {
                 generalButtonClick(); retryGame(); return false;
             }
-            if (mouseX >= menuButton.x && mouseX <= menuButton.x + menuButton.w && mouseY >= menuButton.y && mouseY <= menuButton.y + menuButton.h) {
+            if (mouseX >= menuButtonRect.x && mouseX <= menuButtonRect.x + menuButtonRect.w && mouseY >= menuButtonRect.y && mouseY <= menuButtonRect.y + menuButtonRect.h) {
                 generalButtonClick(); returnToMenu(); return false;
             }
         }
+
+        // If flicking was started, ensure it's handled by mouseReleased, not other UI elements.
+        if (touchState.isFlicking && touchState.currentKey) return false;
+
+        return true; // Default: pass click through
+    };
+
+    p.mouseDragged = function() {
+        if (isMobile && isFlickInputActive && touchState.isFlicking && touchState.currentKey) {
+            // Minimal visual update on drag, actual character selection on release
+            if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL)) p.loop();
+            return false; // Consume drag event
+        }
+        return true;
+    };
+
+    p.mouseReleased = function() {
+        if (isMobile && isFlickInputActive && touchState.isFlicking && touchState.currentKey) {
+            const dx = p.mouseX - touchState.startX;
+            const dy = p.mouseY - touchState.startY;
+            const flickThreshold = 20; // Min distance to be considered a flick
+            let selectedKana = touchState.currentKey.flicks.center; // Default to center (tap)
+
+            if (Math.abs(dx) > flickThreshold || Math.abs(dy) > flickThreshold) { // It's a flick
+                if (Math.abs(dx) > Math.abs(dy)) { // Horizontal flick
+                    if (dx > 0 && touchState.currentKey.flicks.right) selectedKana = touchState.currentKey.flicks.right;
+                    else if (dx < 0 && touchState.currentKey.flicks.left) selectedKana = touchState.currentKey.flicks.left;
+                } else { // Vertical flick
+                    if (dy < 0 && touchState.currentKey.flicks.up) selectedKana = touchState.currentKey.flicks.up; // p5.js Y is inverted from typical UI
+                    else if (dy > 0 && touchState.currentKey.flicks.down) selectedKana = touchState.currentKey.flicks.down;
+                }
+            }
+
+            // console.log("Selected Kana for " + touchState.currentKey.label + ": ", selectedKana, "Key ID:", touchState.currentKey.id);
+
+            let romajiToInput = "";
+            let directAction = false;
+
+            if (touchState.currentKey.id === 'backspace' || selectedKana === 'backspace') { // Ensure consistency
+                currentInput = currentInput.slice(0, -1);
+                directAction = true;
+            } else if (touchState.currentKey.id === 'clear' || selectedKana === 'clear') {
+                currentInput = '';
+                if (combo > 0) playSound(sounds.combo_break); combo = 0;
+                directAction = true;
+            } else if (touchState.currentKey.id === 'toggle_qwerty' || selectedKana === 'toggle_qwerty') {
+                isFlickInputActive = false;
+                isVirtualKeyboardVisible = true; // Show QWERTY
+                directAction = true;
+                playSound(sounds.click);
+            } else if (selectedKana) {
+                // For '゛゜' and '小' keys, the selectedKana is already the character like '゛', 'っ', 'ゃ'
+                // These will be converted by convertKanaToRomaji to placeholders or specific romaji.
+                romajiToInput = convertKanaToRomaji(selectedKana);
+            }
+
+            if (!directAction && romajiToInput) {
+                currentInput += romajiToInput;
+                playSound(sounds.type);
+                gameStats.totalKeystrokes++; // Approximating one flick/tap as one keystroke
+                gameStats.totalCharsTyped += romajiToInput.length;
+
+                let isCorrectPrefixForAnyWord = false;
+                for (const word of words) {
+                    if (!word.isCleared && word.romaji.startsWith(currentInput)) {
+                        isCorrectPrefixForAnyWord = true; break;
+                    }
+                }
+                if (isCorrectPrefixForAnyWord) {
+                    gameStats.correctKeystrokes += romajiToInput.length; // Count all chars in correct segment
+                } else {
+                    // Check if the input was incorrect *before* this romajiToInput was added.
+                    // Only penalize (break combo, play_wrong_sound) if the currentInput *without* romajiToInput
+                    // was a valid prefix for at least one word, or if it was empty.
+                    const previousInput = currentInput.substring(0, currentInput.length - romajiToInput.length);
+                    let wasPreviouslyCorrectOrEmpty = previousInput.length === 0;
+                    if (previousInput.length > 0) {
+                        for (const word of words) {
+                            if (!word.isCleared && word.romaji.startsWith(previousInput)) {
+                                wasPreviouslyCorrectOrEmpty = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (wasPreviouslyCorrectOrEmpty) {
+                        if (combo > 0) playSound(sounds.combo_break);
+                        combo = 0;
+                        playSound(sounds.wrong);
+                    }
+                }
+                checkWordMatch();
+            }
+
+            // Update all word states regardless of direct action or romaji input
+            for (const word of words) word.updateStateFromInput(currentInput);
+
+            touchState.isFlicking = false;
+            touchState.currentKey = null;
+            if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL) ) p.noLoop();
+            return false; // Consume release event
+        }
+        // Reset if flick was not completed or not active
+        touchState.isFlicking = false;
+        touchState.currentKey = null;
         return true;
     };
 
     function handleMobileGameTouch(touchX, touchY) {
         if (isMobile && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-            const inputAreaHeight = 40; let inputAreaY;
-            if (isMobile && isVirtualKeyboardVisible) inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
-            else inputAreaY = height - inputAreaHeight - 20;
+            // Input area touch - only toggle QWERTY visibility if flick is NOT active
+            const inputAreaHeight = 40;
+            let inputAreaY;
+            if (isFlickInputActive) { // Flick keyboard is typically taller
+                 inputAreaY = height - (Math.min(height / 9, 80) * 4 + (Math.min(width / 5, 80) * 0.15 * 3)) - inputAreaHeight - 20; // Approx flick keyboard height
+            } else if (isVirtualKeyboardVisible) { // QWERTY visible
+                 inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
+            } else { // No keyboard visible
+                 inputAreaY = height - inputAreaHeight - 20;
+            }
             const inputAreaRect = { x: width / 2 - 150, y: inputAreaY, w: 300, h: inputAreaHeight };
 
             if (touchX >= inputAreaRect.x && touchX <= inputAreaRect.x + inputAreaRect.w && touchY >= inputAreaRect.y && touchY <= inputAreaRect.y + inputAreaRect.h) {
-                isVirtualKeyboardVisible = !isVirtualKeyboardVisible; playSound(sounds.click); return false;
+                if (!isFlickInputActive) { // Only toggle QWERTY if flick is not active
+                    isVirtualKeyboardVisible = !isVirtualKeyboardVisible;
+                }
+                playSound(sounds.click); return false;
             }
-            if (isVirtualKeyboardVisible) {
+
+            if (isFlickInputActive) {
+                // Flick keyboard touch handling (initial structure)
+                // This will be handled by p.mousePressed, p.mouseDragged, p.mouseReleased sections for flick
+            } else if (isVirtualKeyboardVisible) { // QWERTY keyboard touch
                 for (const key of virtualKeyboard) {
                     if (touchX >= key.x && touchX <= key.x + key.width && touchY >= key.y && touchY <= key.y + key.height) {
                         if (key.key === 'backspace') {
@@ -938,15 +1502,20 @@ const sketch = (p) => {
                         } else if (key.key === 'clear') {
                             currentInput = ''; if (combo > 0) playSound(sounds.combo_break); combo = 0;
                             for (const word of words) { word.updateStateFromInput(currentInput); }
+                        } else if (key.key === 'toggle_flick') {
+                            isFlickInputActive = true;
+                            isVirtualKeyboardVisible = false;
+                            if (flickKeyboardLayout.length === 0) createFlickKeyboard();
+                            playSound(sounds.click);
                         } else {
                             handleTypingInput(key.key); 
                         }
-                        return false;
+                        return false; // Handled QWERTY key press
                     }
                 }
             }
         }
-        return true;
+        return true; // Allow click to pass through if not handled by UI elements above
     }
 
     function playBackgroundMusic() {
@@ -958,7 +1527,10 @@ const sketch = (p) => {
     p.windowResized = function() {
         width = p.windowWidth; height = p.windowHeight;
         p.resizeCanvas(width, height); createButtons();
-        if (isMobile) createVirtualKeyboard();
+        if (isMobile) {
+            createVirtualKeyboard();
+            if (flickKeyboardLayout.length > 0 || isFlickInputActive) createFlickKeyboard(); // Recreate if it was active or already created
+        }
         initKeyboardOverlay(); 
     };
 };
