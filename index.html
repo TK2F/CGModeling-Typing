@@ -344,16 +344,17 @@
     <div id="gameContainer" class="relative w-full h-screen overflow-hidden">
         
         <!-- メインメニュー画面 -->
-        <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center p-4">
-            <div class="text-center mb-8">
-                <h1 class="cyber-font text-3xl md:text-6xl font-bold text-cyan-400 mb-8 drop-shadow-lg" style="text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);">
-                    CGモデリング
-                </h1>
-                <h2 class="cyber-font text-xl md:text-4xl font-medium text-white mb-2">
-                    タイピングゲーム NEO
-                </h2>
-                <p class="cyber-font text-sm md:text-lg text-cyan-300 font-light">v4.1 - Cyber Edition</p>
-            </div>
+            <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center p-4">
+                <div class="text-center mb-8">
+                    {/* ↓↓↓ここから下が変更後のタイトル部分です↓↓↓ */}
+                    <h2 class="cyber-font text-3xl md:text-5xl font-bold text-cyan-400 mb-4 drop-shadow-lg" style="text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);">
+                        CGモデリング<br>タイピングゲーム NEO
+                    </h2>
+                    {/* ↑↑↑ここまでが変更後のタイトル部分です↑↑↑ */}
+                    <p class="cyber-font text-sm md:text-lg text-cyan-300 font-light">
+                        v4.1 - Cyber Edition
+                    </p>
+                </div>
             
             <!-- 現在の設定表示 -->
             <div class="stats-card rounded-lg p-4 mb-6 text-center">
