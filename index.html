@@ -3,23 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CGモデリング タイピングゲーム NEO v4.0</title>
+    <title>CGモデリング タイピングゲーム NEO v4.1 - Cyber Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
         
         * {
-            font-family: 'Noto Sans JP', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
         
         body {
+            font-family: 'Noto Sans JP', sans-serif;
             overscroll-behavior: none;
             touch-action: manipulation;
         }
         
+        .cyber-font {
+            font-family: 'Orbitron', monospace;
+        }
+        
         .game-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+        }
+        
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: grid-move 20s linear infinite;
+        }
+        
+        @keyframes grid-move {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 20px; }
         }
         
         .word-falling {
@@ -48,33 +65,36 @@
         
         @keyframes combo-pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.15); }
         }
         
         .stats-card {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
         }
         
         .progress-bar {
-            background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
+            background: linear-gradient(90deg, #00ffff 0%, #ff00ff 50%, #ffff00 100%);
             animation: progress-glow 2s ease-in-out infinite alternate;
         }
         
         @keyframes progress-glow {
-            0% { filter: brightness(1); }
-            100% { filter: brightness(1.2); }
+            0% { filter: brightness(1) hue-rotate(0deg); }
+            100% { filter: brightness(1.3) hue-rotate(45deg); }
         }
         
         .achievement-badge {
-            background: linear-gradient(45deg, #fbbf24, #f59e0b);
-            animation: achievement-glow 1s ease-in-out infinite alternate;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            background-size: 300% 300%;
+            animation: achievement-glow 2s ease infinite;
         }
         
         @keyframes achievement-glow {
-            0% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
-            100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .screen-shake {
@@ -83,71 +103,146 @@
         
         @keyframes screen-shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
         }
 
-        .flick-key {
-            position: relative;
+        /* サイバーキーボードスタイル */
+        .cyber-keyboard {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 10, 20, 0.95);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.3),
+                inset 0 0 30px rgba(0, 50, 100, 0.2);
+            z-index: 100;
+        }
+        
+        .cyber-key {
+            background: linear-gradient(145deg, rgba(0, 30, 60, 0.8), rgba(0, 20, 40, 0.9));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             transition: all 0.15s ease;
-            touch-action: manipulation;
+            min-width: 35px;
+            min-height: 35px;
+            border-radius: 8px;
         }
         
-        .flick-key:active {
-            transform: scale(0.95);
-            background-color: rgba(59, 130, 246, 0.3) !important;
+        .cyber-key:hover {
+            background: linear-gradient(145deg, rgba(0, 50, 100, 0.8), rgba(0, 40, 80, 0.9));
+            border-color: rgba(0, 255, 255, 0.6);
+            box-shadow: 
+                0 4px 15px rgba(0, 255, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
         }
         
-        .key-btn {
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .key-btn:active {
-            transform: scale(0.95);
-            background-color: rgba(59, 130, 246, 0.3) !important;
+        .cyber-key:active,
+        .cyber-key.active {
+            background: linear-gradient(145deg, rgba(0, 255, 255, 0.3), rgba(0, 200, 255, 0.4));
+            border-color: #00ffff;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 1);
+            box-shadow: 
+                0 0 25px rgba(0, 255, 255, 0.8),
+                inset 0 0 15px rgba(0, 255, 255, 0.4);
+            transform: translateY(1px);
         }
         
-        /* スマホ対応 */
-        @media (max-width: 768px) {
-            .mobile-optimized {
-                padding: 0.5rem;
+        .cyber-key.pressed {
+            animation: key-press 0.2s ease-out;
+        }
+        
+        @keyframes key-press {
+            0% { 
+                background: linear-gradient(145deg, rgba(0, 255, 255, 0.8), rgba(0, 200, 255, 0.9));
+                box-shadow: 0 0 30px rgba(0, 255, 255, 1);
+                transform: scale(1.1);
             }
-            
-            .game-container {
-                height: 100vh;
-                overflow: hidden;
+            100% { 
+                background: linear-gradient(145deg, rgba(0, 30, 60, 0.8), rgba(0, 20, 40, 0.9));
+                transform: scale(1);
             }
-            
-            .keyboard-container {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                z-index: 50;
-            }
-            
-            .words-area {
-                height: calc(100vh - 200px);
-                overflow: hidden;
-            }
+        }
+        
+        .keyboard-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        
+        /* ゲーム状態インジケーター */
+        .speed-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 2px solid rgba(255, 215, 0, 0.7);
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #ffd700;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            z-index: 50;
+        }
+        
+        .rescue-mode {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 100, 100, 0.9);
+            border: 2px solid rgba(255, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            z-index: 200;
+            animation: rescue-pulse 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes rescue-pulse {
+            0% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
         }
 
         .word-card {
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
+            border: 2px solid transparent;
         }
         
         .word-card.completed {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+            background: rgba(0, 255, 100, 0.2);
+            border-color: #00ff64;
+            box-shadow: 0 0 25px rgba(0, 255, 100, 0.6);
+            transform: scale(1.1);
         }
         
         .word-card.error {
-            background: rgba(239, 68, 68, 0.2) !important;
-            border: 2px solid rgba(239, 68, 68, 0.5);
+            background: rgba(255, 50, 50, 0.2);
+            border-color: #ff3232;
+            box-shadow: 0 0 25px rgba(255, 50, 50, 0.6);
         }
 
         /* 入力表示の改善 */
@@ -156,12 +251,50 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            font-family: 'Orbitron', monospace;
         }
 
-        /* キーボードフォーカス表示 */
-        button:focus-visible {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
+        /* スマホ対応 */
+        @media (max-width: 768px) {
+            .cyber-keyboard {
+                bottom: 5px;
+                left: 5px;
+                right: 5px;
+                transform: none;
+                padding: 10px;
+            }
+            
+            .cyber-key {
+                min-width: 30px;
+                min-height: 30px;
+                font-size: 12px;
+            }
+            
+            .speed-indicator {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        /* レスポンシブ調整 */
+        @media (max-width: 640px) {
+            .mobile-optimized {
+                font-size: 0.875rem;
+            }
+            
+            .mobile-optimized h1 {
+                font-size: 2rem;
+            }
+            
+            .mobile-optimized h2 {
+                font-size: 1.5rem;
+            }
         }
 
         /* アクセシビリティ */
@@ -172,27 +305,58 @@
                 transition-duration: 0.01ms !important;
             }
         }
+
+        /* フォーカス表示 */
+        button:focus-visible {
+            outline: 2px solid #00ffff;
+            outline-offset: 2px;
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 255, 255, 0.5);
+        }
+
+        /* セレクション色 */
+        ::selection {
+            background: rgba(0, 255, 255, 0.3);
+            color: white;
+        }
     </style>
 </head>
-<body class="game-gradient min-h-screen overflow-hidden select-none">
+<body class="game-gradient cyber-grid min-h-screen overflow-hidden select-none">
     <!-- ゲーム全体のコンテナ -->
     <div id="gameContainer" class="relative w-full h-screen overflow-hidden">
         
         <!-- メインメニュー画面 -->
         <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center p-4">
             <div class="text-center mb-8">
-                <h1 class="text-3xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                <h1 class="cyber-font text-3xl md:text-6xl font-bold text-cyan-400 mb-4 drop-shadow-lg" style="text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);">
                     CGモデリング
                 </h1>
-                <h2 class="text-xl md:text-4xl font-medium text-white/90 mb-2">
+                <h2 class="cyber-font text-xl md:text-4xl font-medium text-white mb-2">
                     タイピングゲーム NEO
                 </h2>
-                <p class="text-sm md:text-lg text-white/80 font-light">v4.0</p>
+                <p class="cyber-font text-sm md:text-lg text-cyan-300 font-light">v4.1 - Cyber Edition</p>
             </div>
             
             <!-- 現在の設定表示 -->
-            <div class="stats-card rounded-lg p-4 mb-6 text-white text-center">
-                <p class="text-xs md:text-sm opacity-90">
+            <div class="stats-card rounded-lg p-4 mb-6 text-center">
+                <p class="text-xs md:text-sm text-cyan-300">
                     <span id="currentMode">カタカナ</span> / 
                     <span id="currentDifficulty">ふつう</span>
                 </p>
@@ -200,83 +364,109 @@
             
             <!-- メニューボタン -->
             <div class="flex flex-col gap-3 w-full max-w-xs">
-                <button id="startGame" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                <button id="startGame" class="cyber-font bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base border border-cyan-400">
                     ゲームスタート
                 </button>
-                <button id="tutorialBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                <button id="tutorialBtn" class="cyber-font bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base border border-emerald-400">
                     チュートリアル
                 </button>
-                <button id="settingsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                <button id="settingsBtn" class="cyber-font bg-gradient-to-r from-purple-600 to-violet-500 hover:from-purple-700 hover:to-violet-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base border border-violet-400">
                     設定
                 </button>
-                <button id="statisticsBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                <button id="statisticsBtn" class="cyber-font bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base border border-amber-400">
                     統計・履歴
                 </button>
-                <button id="creditsBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base">
+                <button id="creditsBtn" class="cyber-font bg-gradient-to-r from-gray-600 to-slate-500 hover:from-gray-700 hover:to-slate-600 text-white font-bold py-2 md:py-3 px-6 md:px-8 rounded-xl transition-all duration-200 transform active:scale-95 shadow-lg text-sm md:text-base border border-slate-400">
                     クレジット
                 </button>
             </div>
         </div>
         
         <!-- ゲーム画面 -->
-        <div id="gameScreen" class="absolute inset-0 hidden game-container">
+        <div id="gameScreen" class="absolute inset-0 hidden">
             <!-- ゲーム上部UI -->
             <div class="absolute top-0 left-0 right-0 z-10 p-2 md:p-4">
                 <div class="flex justify-between items-start">
                     <!-- 左側：スコア、コンボ -->
-                    <div class="stats-card rounded-lg p-2 md:p-3 text-white">
-                        <div class="text-xs md:text-sm opacity-90">Score</div>
-                        <div id="score" class="text-lg md:text-2xl font-bold">0</div>
+                    <div class="stats-card rounded-lg p-2 md:p-3">
+                        <div class="text-xs md:text-sm text-cyan-300">Score</div>
+                        <div id="score" class="cyber-font text-lg md:text-2xl font-bold text-white">0</div>
                         <div id="combo" class="text-xs md:text-sm mt-1 hidden">
-                            Combo: <span class="font-bold text-yellow-300">0</span>x
+                            Combo: <span class="cyber-font font-bold text-yellow-300">0</span>x
                         </div>
                     </div>
                     
                     <!-- 右側：タイマー、ポーズ -->
                     <div class="flex items-center gap-2 md:gap-3">
-                        <div class="stats-card rounded-lg p-2 md:p-3 text-white text-center">
-                            <div class="text-xs md:text-sm opacity-90">Time</div>
-                            <div id="timeLeft" class="text-lg md:text-2xl font-bold">60</div>
+                        <div class="stats-card rounded-lg p-2 md:p-3 text-center">
+                            <div class="text-xs md:text-sm text-cyan-300">Time</div>
+                            <div id="timeLeft" class="cyber-font text-lg md:text-2xl font-bold text-white">60</div>
                         </div>
-                        <button id="pauseBtn" class="key-btn bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-lg transition-all text-sm md:text-base">
-                            ⏸️
-                        </button>
+                        <button id="pauseBtn" class="cyber-key text-sm md:text-base">⏸️</button>
                     </div>
                 </div>
             </div>
             
+            <!-- スピードインジケーター -->
+            <div id="speedIndicator" class="speed-indicator hidden">
+                <div class="text-sm">SPEED LV.</div>
+                <div id="speedLevel" class="text-lg font-bold">1</div>
+            </div>
+            
+            <!-- 救済モード表示 -->
+            <div id="rescueMode" class="rescue-mode hidden">
+                <div class="text-lg font-bold">RESCUE MODE</div>
+                <div class="text-sm">スピードダウン中...</div>
+            </div>
+            
             <!-- 落下単語エリア -->
-            <div id="wordsContainer" class="absolute inset-0 words-area pointer-events-none" style="top: 80px; bottom: 200px;"></div>
+            <div id="wordsContainer" class="absolute inset-0 pointer-events-none" style="top: 80px; bottom: 120px;"></div>
             
             <!-- パーティクルエフェクトコンテナ -->
             <div id="particlesContainer" class="absolute inset-0 pointer-events-none"></div>
             
-            <!-- 入力エリア（下部固定） -->
-            <div class="keyboard-container bg-black/20 backdrop-blur-sm">
-                <!-- 現在の入力表示 -->
-                <div class="p-2 md:p-4">
-                    <div class="stats-card rounded-lg p-3 md:p-4 text-center">
-                        <div class="text-white text-sm md:text-lg mb-2">入力中:</div>
-                        <div id="currentInput" class="input-display text-lg md:text-2xl font-mono bg-black/30 rounded px-4 py-2 text-white">
-                            <span class="text-gray-400">入力待ち...</span>
-                        </div>
-                    </div>
-                    
-                    <!-- 入力モード切替 -->
-                    <div class="flex justify-center gap-2 mt-2 md:mt-4">
-                        <button id="toggleInput" class="key-btn bg-white/20 hover:bg-white/30 text-white px-3 md:px-4 py-1 md:py-2 rounded-lg transition-all text-xs md:text-sm">
-                            <span id="inputModeText">フリック入力</span>に切替
-                        </button>
-                    </div>
+            <!-- 入力表示（下部中央） -->
+            <div class="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-80 max-w-full px-4">
+                <div class="input-display text-lg md:text-xl font-mono text-cyan-300 px-4 py-3">
+                    <span id="currentInput" class="text-white">入力待ち...</span>
                 </div>
-                
-                <!-- キーボードエリア -->
-                <div id="keyboardContainer" class="p-2 md:p-4">
-                    <!-- QWERTY キーボード -->
-                    <div id="qwertyKeyboard" class="grid gap-1 md:gap-2"></div>
-                    
-                    <!-- フリック キーボード -->
-                    <div id="flickKeyboard" class="hidden grid grid-cols-5 gap-1 md:gap-2"></div>
+            </div>
+            
+            <!-- サイバーキーボード -->
+            <div id="cyberKeyboard" class="cyber-keyboard">
+                <div class="keyboard-row">
+                    <div class="cyber-key" data-key="q">Q</div>
+                    <div class="cyber-key" data-key="w">W</div>
+                    <div class="cyber-key" data-key="e">E</div>
+                    <div class="cyber-key" data-key="r">R</div>
+                    <div class="cyber-key" data-key="t">T</div>
+                    <div class="cyber-key" data-key="y">Y</div>
+                    <div class="cyber-key" data-key="u">U</div>
+                    <div class="cyber-key" data-key="i">I</div>
+                    <div class="cyber-key" data-key="o">O</div>
+                    <div class="cyber-key" data-key="p">P</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="cyber-key" data-key="a">A</div>
+                    <div class="cyber-key" data-key="s">S</div>
+                    <div class="cyber-key" data-key="d">D</div>
+                    <div class="cyber-key" data-key="f">F</div>
+                    <div class="cyber-key" data-key="g">G</div>
+                    <div class="cyber-key" data-key="h">H</div>
+                    <div class="cyber-key" data-key="j">J</div>
+                    <div class="cyber-key" data-key="k">K</div>
+                    <div class="cyber-key" data-key="l">L</div>
+                </div>
+                <div class="keyboard-row">
+                    <div class="cyber-key" data-key="z">Z</div>
+                    <div class="cyber-key" data-key="x">X</div>
+                    <div class="cyber-key" data-key="c">C</div>
+                    <div class="cyber-key" data-key="v">V</div>
+                    <div class="cyber-key" data-key="b">B</div>
+                    <div class="cyber-key" data-key="n">N</div>
+                    <div class="cyber-key" data-key="m">M</div>
+                    <div class="cyber-key" data-key="backspace" style="min-width: 60px;">←</div>
+                    <div class="cyber-key" data-key="clear" style="min-width: 60px;">CLR</div>
                 </div>
             </div>
         </div>
@@ -284,37 +474,37 @@
         <!-- 設定画面 -->
         <div id="settingsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
             <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-md">
-                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">設定</h2>
+                <h2 class="cyber-font text-xl md:text-2xl font-bold text-cyan-400 mb-6 text-center">設定</h2>
                 
                 <!-- 表示モード設定 -->
                 <div class="mb-6">
-                    <h3 class="text-white font-semibold mb-3">表示モード</h3>
+                    <h3 class="text-cyan-300 font-semibold mb-3">表示モード</h3>
                     <div class="grid grid-cols-1 gap-2">
-                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="katakana">カタカナモード</button>
-                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="hiragana">ひらがなモード</button>
-                        <button class="mode-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-mode="mixed">ミックスモード</button>
+                        <button class="mode-btn cyber-key text-sm" data-mode="katakana">カタカナモード</button>
+                        <button class="mode-btn cyber-key text-sm" data-mode="hiragana">ひらがなモード</button>
+                        <button class="mode-btn cyber-key text-sm" data-mode="mixed">ミックスモード</button>
                     </div>
                 </div>
                 
                 <!-- 難易度設定 -->
                 <div class="mb-6">
-                    <h3 class="text-white font-semibold mb-3">難易度</h3>
+                    <h3 class="text-cyan-300 font-semibold mb-3">難易度</h3>
                     <div class="grid grid-cols-1 gap-2">
-                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="easy">かんたん (90秒)</button>
-                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="normal">ふつう (60秒)</button>
-                        <button class="difficulty-btn key-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all text-sm" data-difficulty="hard">むずかしい (45秒)</button>
+                        <button class="difficulty-btn cyber-key text-sm" data-difficulty="easy">かんたん (90秒)</button>
+                        <button class="difficulty-btn cyber-key text-sm" data-difficulty="normal">ふつう (60秒)</button>
+                        <button class="difficulty-btn cyber-key text-sm" data-difficulty="hard">むずかしい (45秒)</button>
                     </div>
                 </div>
                 
                 <!-- サウンド設定 -->
                 <div class="mb-6">
-                    <label class="flex items-center justify-between text-white">
+                    <label class="flex items-center justify-between text-cyan-300">
                         <span>サウンド</span>
                         <input type="checkbox" id="soundToggle" class="toggle" checked>
                     </label>
                 </div>
                 
-                <button id="backToMenu" class="key-btn w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                <button id="backToMenu" class="cyber-key w-full font-bold py-3 px-8">
                     メニューに戻る
                 </button>
             </div>
@@ -324,39 +514,37 @@
         <div id="statisticsScreen" class="absolute inset-0 hidden overflow-y-auto p-4">
             <div class="max-w-4xl mx-auto">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-white">統計・履歴</h2>
-                    <button id="backToMenuFromStats" class="key-btn bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
-                        戻る
-                    </button>
+                    <h2 class="cyber-font text-2xl md:text-3xl font-bold text-cyan-400">統計・履歴</h2>
+                    <button id="backToMenuFromStats" class="cyber-key px-4 py-2">戻る</button>
                 </div>
                 
                 <!-- 総合統計 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="stats-card rounded-lg p-4 text-center">
-                        <div class="text-white/80 text-sm">総プレイ回数</div>
-                        <div id="totalGames" class="text-2xl font-bold text-white">0</div>
+                        <div class="text-cyan-300 text-sm">総プレイ回数</div>
+                        <div id="totalGames" class="cyber-font text-2xl font-bold text-white">0</div>
                     </div>
                     <div class="stats-card rounded-lg p-4 text-center">
-                        <div class="text-white/80 text-sm">最高スコア</div>
-                        <div id="bestScore" class="text-2xl font-bold text-yellow-300">0</div>
+                        <div class="text-cyan-300 text-sm">最高スコア</div>
+                        <div id="bestScore" class="cyber-font text-2xl font-bold text-yellow-300">0</div>
                     </div>
                     <div class="stats-card rounded-lg p-4 text-center">
-                        <div class="text-white/80 text-sm">平均WPM</div>
-                        <div id="averageWPM" class="text-2xl font-bold text-green-300">0</div>
+                        <div class="text-cyan-300 text-sm">平均WPM</div>
+                        <div id="averageWPM" class="cyber-font text-2xl font-bold text-green-300">0</div>
                     </div>
                 </div>
                 
                 <!-- レベル進行状況 -->
                 <div class="stats-card rounded-lg p-4 mb-6">
-                    <h3 class="text-white font-semibold mb-3">レベル進行状況</h3>
+                    <h3 class="text-cyan-300 font-semibold mb-3">レベル進行状況</h3>
                     <div class="flex items-center gap-4">
-                        <div class="text-white text-xl font-bold">Lv.<span id="currentLevel">1</span></div>
+                        <div class="cyber-font text-white text-xl font-bold">Lv.<span id="currentLevel">1</span></div>
                         <div class="flex-1">
                             <div class="bg-black/30 rounded-full h-4 overflow-hidden">
                                 <div id="levelProgress" class="progress-bar h-full rounded-full" style="width: 0%"></div>
                             </div>
                         </div>
-                        <div class="text-white/80 text-sm">
+                        <div class="text-cyan-300 text-sm">
                             <span id="currentXP">0</span>/<span id="nextLevelXP">100</span> XP
                         </div>
                     </div>
@@ -364,7 +552,7 @@
                 
                 <!-- 達成記録 -->
                 <div class="stats-card rounded-lg p-4 mb-6">
-                    <h3 class="text-white font-semibold mb-3">達成記録</h3>
+                    <h3 class="text-cyan-300 font-semibold mb-3">達成記録</h3>
                     <div id="achievements" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <!-- 達成記録がここに動的追加される -->
                     </div>
@@ -372,7 +560,7 @@
                 
                 <!-- 最近のゲーム履歴 -->
                 <div class="stats-card rounded-lg p-4">
-                    <h3 class="text-white font-semibold mb-3">最近のゲーム履歴</h3>
+                    <h3 class="text-cyan-300 font-semibold mb-3">最近のゲーム履歴</h3>
                     <div id="recentGames" class="space-y-2">
                         <!-- ゲーム履歴がここに動的追加される -->
                     </div>
@@ -383,18 +571,18 @@
         <!-- クレジット画面 -->
         <div id="creditsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
             <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-2xl">
-                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">クレジット</h2>
+                <h2 class="cyber-font text-xl md:text-2xl font-bold text-cyan-400 mb-6 text-center">クレジット</h2>
                 
                 <div class="text-white space-y-6">
                     <!-- ゲーム情報 -->
                     <div class="text-center">
-                        <h3 class="text-lg font-bold mb-2">CGモデリング タイピングゲーム NEO v4.0</h3>
+                        <h3 class="cyber-font text-lg font-bold mb-2 text-cyan-300">CGモデリング タイピングゲーム NEO v4.1</h3>
                         <p class="text-sm opacity-80">VRoidとCGモデリング用語を学べるタイピングゲーム</p>
                     </div>
                     
                     <!-- 開発情報 -->
                     <div>
-                        <h3 class="text-md font-bold mb-2">💻 開発</h3>
+                        <h3 class="text-md font-bold mb-2 text-cyan-300">💻 開発</h3>
                         <div class="bg-white/10 rounded-lg p-3">
                             <p class="text-sm font-semibold">TK2 Lab & Claude</p>
                             <p class="text-xs opacity-70 mt-2">©2025 TK2 Lab All rights reserved.</p>
@@ -404,11 +592,11 @@
                     
                     <!-- BGM -->
                     <div>
-                        <h3 class="text-md font-bold mb-2">🎵 BGM</h3>
+                        <h3 class="text-md font-bold mb-2 text-cyan-300">🎵 BGM</h3>
                         <div class="bg-white/10 rounded-lg p-3">
                             <p class="text-sm">フリーBGM DOVA-SYNDROME様より</p>
                             <p class="text-sm font-semibold">shimtone様「Desktop Duel」</p>
-                            <a href="https://dova-s.jp/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
+                            <a href="https://dova-s.jp/" target="_blank" rel="noopener" class="text-cyan-400 hover:text-cyan-300 text-sm underline">
                                 https://dova-s.jp/
                             </a>
                             <p class="text-xs opacity-70 mt-2">※BGMの著作権は原作者に帰属します</p>
@@ -417,10 +605,10 @@
                     
                     <!-- 効果音 -->
                     <div>
-                        <h3 class="text-md font-bold mb-2">🔊 効果音</h3>
+                        <h3 class="text-md font-bold mb-2 text-cyan-300">🔊 効果音</h3>
                         <div class="bg-white/10 rounded-lg p-3">
                             <p class="text-sm">効果音LAB様</p>
-                            <a href="https://soundeffect-lab.info/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
+                            <a href="https://soundeffect-lab.info/" target="_blank" rel="noopener" class="text-cyan-400 hover:text-cyan-300 text-sm underline">
                                 https://soundeffect-lab.info/
                             </a>
                             <p class="text-xs opacity-70 mt-2">※効果音の著作権は原作者に帰属します</p>
@@ -429,7 +617,7 @@
                     
                     <!-- 利用規約・ライセンス -->
                     <div>
-                        <h3 class="text-md font-bold mb-2">📄 利用について</h3>
+                        <h3 class="text-md font-bold mb-2 text-cyan-300">📄 利用について</h3>
                         <div class="bg-white/10 rounded-lg p-3">
                             <p class="text-xs opacity-90">
                                 本ゲームは個人・教育目的での利用を想定しています。<br>
@@ -441,19 +629,19 @@
                     
                     <!-- 技術情報 -->
                     <div>
-                        <h3 class="text-md font-bold mb-2">🛠️ 使用技術</h3>
+                        <h3 class="text-md font-bold mb-2 text-cyan-300">🛠️ 使用技術</h3>
                         <div class="bg-white/10 rounded-lg p-3">
                             <ul class="text-sm space-y-1">
                                 <li>• HTML5 / CSS3 / JavaScript</li>
                                 <li>• Tailwind CSS</li>
-                                <li>• Google Fonts (Noto Sans JP)</li>
+                                <li>• Google Fonts (Orbitron + Noto Sans JP)</li>
                                 <li>• Web Storage API</li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 
-                <button id="backToMenuFromCredits" class="key-btn w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all mt-6">
+                <button id="backToMenuFromCredits" class="cyber-key w-full font-bold py-3 px-8 mt-6">
                     メニューに戻る
                 </button>
             </div>
@@ -462,7 +650,7 @@
         <!-- 結果画面 -->
         <div id="resultsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
             <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-lg text-center">
-                <h2 class="text-2xl md:text-3xl font-bold text-white mb-6">ゲーム結果</h2>
+                <h2 class="cyber-font text-2xl md:text-3xl font-bold text-cyan-400 mb-6">ゲーム結果</h2>
                 
                 <!-- 獲得XP表示 -->
                 <div id="xpGained" class="achievement-badge text-white font-bold py-2 px-4 rounded-lg mb-4 hidden">
@@ -470,27 +658,27 @@
                 </div>
                 
                 <!-- スコア表示 -->
-                <div class="text-3xl md:text-4xl font-bold text-yellow-300 mb-4">
+                <div class="cyber-font text-3xl md:text-4xl font-bold text-yellow-300 mb-4">
                     <span id="finalScore">0</span> pt
                 </div>
                 
                 <!-- 詳細統計 -->
                 <div class="grid grid-cols-2 gap-4 mb-6 text-white text-sm md:text-base">
                     <div>
-                        <div class="text-xs md:text-sm opacity-80">入力単語数</div>
-                        <div id="finalWords" class="text-lg md:text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm text-cyan-300">入力単語数</div>
+                        <div id="finalWords" class="cyber-font text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-xs md:text-sm opacity-80">最大コンボ</div>
-                        <div id="finalCombo" class="text-lg md:text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm text-cyan-300">最大コンボ</div>
+                        <div id="finalCombo" class="cyber-font text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-xs md:text-sm opacity-80">WPM</div>
-                        <div id="finalWPM" class="text-lg md:text-xl font-bold">0</div>
+                        <div class="text-xs md:text-sm text-cyan-300">WPM</div>
+                        <div id="finalWPM" class="cyber-font text-lg md:text-xl font-bold">0</div>
                     </div>
                     <div>
-                        <div class="text-xs md:text-sm opacity-80">正確性</div>
-                        <div id="finalAccuracy" class="text-lg md:text-xl font-bold">0%</div>
+                        <div class="text-xs md:text-sm text-cyan-300">正確性</div>
+                        <div id="finalAccuracy" class="cyber-font text-lg md:text-xl font-bold">0%</div>
                     </div>
                 </div>
                 
@@ -506,10 +694,10 @@
                 
                 <!-- ボタン -->
                 <div class="flex flex-col gap-3">
-                    <button id="playAgain" class="key-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="playAgain" class="cyber-key font-bold py-3 px-8">
                         もう一度プレイ
                     </button>
-                    <button id="backToMenuFromResults" class="key-btn bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    <button id="backToMenuFromResults" class="cyber-key font-bold py-3 px-8">
                         メニューに戻る
                     </button>
                 </div>
@@ -519,22 +707,18 @@
         <!-- チュートリアル画面 -->
         <div id="tutorialScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
             <div class="stats-card rounded-xl p-4 md:p-6 w-full max-w-2xl">
-                <h2 class="text-xl md:text-2xl font-bold text-white mb-6 text-center">チュートリアル</h2>
+                <h2 class="cyber-font text-xl md:text-2xl font-bold text-cyan-400 mb-6 text-center">チュートリアル</h2>
                 
                 <div id="tutorialContent" class="text-white space-y-4 mb-6 text-sm md:text-base">
                     <!-- チュートリアル内容がここに表示される -->
                 </div>
                 
                 <div class="flex justify-between">
-                    <button id="tutorialPrev" class="key-btn bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
-                        前へ
-                    </button>
+                    <button id="tutorialPrev" class="cyber-key px-4 py-2">前へ</button>
                     <div class="flex items-center gap-2">
-                        <span id="tutorialStep" class="text-white">1 / 4</span>
+                        <span id="tutorialStep" class="cyber-font text-cyan-300">1 / 4</span>
                     </div>
-                    <button id="tutorialNext" class="key-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
-                        次へ
-                    </button>
+                    <button id="tutorialNext" class="cyber-key px-4 py-2">次へ</button>
                 </div>
             </div>
         </div>
@@ -542,17 +726,11 @@
         <!-- ポーズ画面 -->
         <div id="pauseScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center bg-black/50">
             <div class="stats-card rounded-xl p-6 text-center">
-                <h2 class="text-xl md:text-2xl font-bold text-white mb-6">ポーズ中</h2>
+                <h2 class="cyber-font text-xl md:text-2xl font-bold text-cyan-400 mb-6">ポーズ中</h2>
                 <div class="flex flex-col gap-3">
-                    <button id="resumeGame" class="key-btn bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
-                        ゲーム再開
-                    </button>
-                    <button id="restartGame" class="key-btn bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
-                        リスタート
-                    </button>
-                    <button id="quitGame" class="key-btn bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
-                        メニューに戻る
-                    </button>
+                    <button id="resumeGame" class="cyber-key font-bold py-3 px-8">ゲーム再開</button>
+                    <button id="restartGame" class="cyber-key font-bold py-3 px-8">リスタート</button>
+                    <button id="quitGame" class="cyber-key font-bold py-3 px-8">メニューに戻る</button>
                 </div>
             </div>
         </div>
@@ -562,9 +740,17 @@
         // ===== ゲーム設定とデータ =====
         const GAME_CONFIG = {
             durations: { easy: 90, normal: 60, hard: 45 },
-            fallSpeeds: { easy: 2, normal: 3, hard: 4 },
+            baseFallSpeeds: { easy: 1.5, normal: 2.5, hard: 3.5 },
             spawnIntervals: { easy: 3000, normal: 2000, hard: 1500 },
-            version: 'v4.0'
+            speedLevels: [
+                { multiplier: 1.0, bonusMultiplier: 1.0 },
+                { multiplier: 1.3, bonusMultiplier: 1.5 },
+                { multiplier: 1.6, bonusMultiplier: 2.0 },
+                { multiplier: 2.0, bonusMultiplier: 2.5 }
+            ],
+            rescueSpeedMultiplier: 0.6,
+            rescueDuration: 3000,
+            version: 'v4.1'
         };
 
         // カナ文字→ローマ字変換マップ
@@ -703,8 +889,7 @@
                 this.gameSettings = {
                     mode: 'katakana',
                     difficulty: 'normal',
-                    soundEnabled: true,
-                    inputMode: 'qwerty'
+                    soundEnabled: true
                 };
                 this.gameData = {
                     score: 0,
@@ -718,7 +903,14 @@
                     words: [],
                     gameStartTime: null,
                     isGameActive: false,
-                    isPaused: false
+                    isPaused: false,
+                    // 新機能
+                    speedLevel: 0,
+                    mistakeCount: 0,
+                    consecutiveMistakes: 0,
+                    isRescueMode: false,
+                    rescueEndTime: 0,
+                    levelUpTime: 0
                 };
                 this.tutorialStep = 0;
                 
@@ -816,7 +1008,13 @@
                     words: [],
                     gameStartTime: null,
                     isGameActive: false,
-                    isPaused: false
+                    isPaused: false,
+                    speedLevel: 0,
+                    mistakeCount: 0,
+                    consecutiveMistakes: 0,
+                    isRescueMode: false,
+                    rescueEndTime: 0,
+                    levelUpTime: 0
                 };
             }
         }
@@ -838,7 +1036,9 @@
                     combo: 'sounds/combo_increase.mp3',
                     combo_break: 'sounds/combo_break.mp3',
                     click: 'sounds/click.mp3',
-                    bgm: 'sounds/bgm.mp3'
+                    bgm: 'sounds/bgm.mp3',
+                    speed_up: 'sounds/speed_up.mp3',
+                    rescue: 'sounds/rescue.mp3'
                 };
 
                 for (const [name, path] of Object.entries(soundFiles)) {
@@ -847,7 +1047,6 @@
                         audio.volume = name === 'bgm' ? 0.3 : 0.7;
                         audio.preload = 'none';
                         audio.onerror = () => {
-                            // 音声ファイルが見つからなくてもエラーにしない
                             this.sounds[name] = null;
                         };
                         this.sounds[name] = audio;
@@ -868,19 +1067,13 @@
                     const sound = this.sounds[soundName];
                     if (volume !== null) sound.volume = volume;
                     sound.currentTime = 0;
-                    sound.play().catch(() => {
-                        // 音声再生エラーを無視
-                    });
-                } catch (e) {
-                    // 音声再生エラーを無視
-                }
+                    sound.play().catch(() => {});
+                } catch (e) {}
             }
 
             playBGM() {
                 if (this.enabled && this.sounds.bgm) {
-                    this.sounds.bgm.play().catch(() => {
-                        // BGM再生エラーを無視
-                    });
+                    this.sounds.bgm.play().catch(() => {});
                 }
             }
 
@@ -906,7 +1099,8 @@
                 this.romaji = wordData.romaji;
                 this.x = x;
                 this.y = -60;
-                this.speed = speed;
+                this.baseSpeed = speed;
+                this.currentSpeed = speed;
                 this.typedLength = 0;
                 this.isCompleted = false;
                 this.isError = false;
@@ -916,7 +1110,7 @@
 
             createElement() {
                 const element = document.createElement('div');
-                element.className = 'word-card absolute bg-white/90 rounded-lg p-2 md:p-3 shadow-lg transform transition-all duration-200';
+                element.className = 'word-card absolute rounded-lg p-2 md:p-3 shadow-lg transform transition-all duration-200';
                 element.style.left = this.x + 'px';
                 element.style.top = this.y + 'px';
                 element.style.minWidth = '120px';
@@ -939,10 +1133,9 @@
             update() {
                 if (this.isCompleted) return false;
                 
-                this.y += this.speed;
+                this.y += this.currentSpeed;
                 this.element.style.top = this.y + 'px';
                 
-                // 画面下に到達したかチェック
                 const containerHeight = document.getElementById('wordsContainer')?.offsetHeight || window.innerHeight;
                 if (this.y > containerHeight + 100) {
                     this.remove();
@@ -950,6 +1143,10 @@
                 }
                 
                 return true;
+            }
+
+            updateSpeed(speedMultiplier) {
+                this.currentSpeed = this.baseSpeed * speedMultiplier;
             }
 
             updateDisplay(currentInput) {
@@ -979,11 +1176,7 @@
             complete() {
                 this.isCompleted = true;
                 this.element.classList.add('completed');
-                
-                // パーティクルエフェクト
                 this.createParticles();
-                
-                // 少し遅れて削除
                 setTimeout(() => this.remove(), 300);
             }
 
@@ -992,13 +1185,14 @@
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
                 
-                for (let i = 0; i < 8; i++) {
+                for (let i = 0; i < 12; i++) {
                     const particle = document.createElement('div');
-                    particle.className = 'particle w-1 h-1 md:w-2 md:h-2 bg-yellow-400 rounded-full';
+                    particle.className = 'particle w-1 h-1 md:w-2 md:h-2 bg-cyan-400 rounded-full';
                     particle.style.left = centerX + 'px';
                     particle.style.top = centerY + 'px';
-                    particle.style.setProperty('--dx', (Math.random() - 0.5) * 150 + 'px');
-                    particle.style.setProperty('--dy', (Math.random() - 0.5) * 150 + 'px');
+                    particle.style.setProperty('--dx', (Math.random() - 0.5) * 200 + 'px');
+                    particle.style.setProperty('--dy', (Math.random() - 0.5) * 200 + 'px');
+                    particle.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.8)';
                     
                     const container = document.getElementById('particlesContainer');
                     if (container) {
@@ -1040,11 +1234,10 @@
 
             init() {
                 this.setupEventListeners();
-                this.createKeyboards();
+                this.setupCyberKeyboard();
                 this.updateUI();
                 this.showScreen('menu');
                 
-                // 設定を音響システムに適用
                 this.soundSystem.setEnabled(this.gameState.gameSettings.soundEnabled);
             }
 
@@ -1072,7 +1265,6 @@
                 
                 // ゲーム画面
                 document.getElementById('pauseBtn')?.addEventListener('click', () => this.pauseGame());
-                document.getElementById('toggleInput')?.addEventListener('click', () => this.toggleInputMode());
                 
                 // ポーズ画面
                 document.getElementById('resumeGame')?.addEventListener('click', () => this.resumeGame());
@@ -1095,100 +1287,36 @@
                 
                 // キーボード入力
                 document.addEventListener('keydown', (e) => this.handleKeyInput(e));
+                document.addEventListener('keyup', (e) => this.handleKeyUp(e));
                 
                 // リサイズ対応
                 window.addEventListener('resize', () => this.handleResize());
             }
 
-            createKeyboards() {
-                this.createQWERTYKeyboard();
-                this.createFlickKeyboard();
-            }
-
-            createQWERTYKeyboard() {
-                const container = document.getElementById('qwertyKeyboard');
-                if (!container) return;
-
-                const keys = [
-                    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-                    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-                    ['z', 'x', 'c', 'v', 'b', 'n', 'm', '←', '消去']
-                ];
-                
-                container.innerHTML = '';
-                
-                // スマホの場合は5列のレイアウトに変更
-                if (this.isMobile) {
-                    container.className = 'grid grid-cols-5 gap-1';
-                } else {
-                    container.className = 'grid grid-cols-10 gap-2';
-                }
-                
-                keys.forEach((row, rowIndex) => {
-                    row.forEach(key => {
-                        const button = document.createElement('button');
-                        button.textContent = key === '←' ? '←' : key === '消去' ? '消去' : key.toUpperCase();
-                        button.className = 'key-btn bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded transition-all text-xs md:text-sm';
-                        
-                        if (key === '←') {
-                            button.addEventListener('click', () => this.handleBackspace());
-                        } else if (key === '消去') {
-                            button.addEventListener('click', () => this.handleClear());
-                        } else {
-                            button.addEventListener('click', () => this.handleCharInput(key));
-                        }
-                        
-                        container.appendChild(button);
-                    });
-                });
-            }
-
-            createFlickKeyboard() {
-                const container = document.getElementById('flickKeyboard');
-                if (!container) return;
-
-                const flickKeys = [
-                    { main: 'あ', sub: ['い', 'う', 'え', 'お'] },
-                    { main: 'か', sub: ['き', 'く', 'け', 'こ'] },
-                    { main: 'さ', sub: ['し', 'す', 'せ', 'そ'] },
-                    { main: 'た', sub: ['ち', 'つ', 'て', 'と'] },
-                    { main: 'な', sub: ['に', 'ぬ', 'ね', 'の'] },
-                    { main: 'は', sub: ['ひ', 'ふ', 'へ', 'ほ'] },
-                    { main: 'ま', sub: ['み', 'む', 'め', 'も'] },
-                    { main: 'や', sub: ['ゆ', 'よ'] },
-                    { main: 'ら', sub: ['り', 'る', 'れ', 'ろ'] },
-                    { main: 'わ', sub: ['を', 'ん'] },
-                    { main: '←', type: 'backspace' },
-                    { main: '消去', type: 'clear' },
-                    { main: 'ー', type: 'dash' },
-                    { main: '゛゜', sub: ['が', 'ぱ'] },
-                    { main: 'ABC', type: 'toggle' }
-                ];
-                
-                container.innerHTML = '';
-                
-                flickKeys.forEach(keyData => {
-                    const button = document.createElement('button');
-                    button.className = 'flick-key key-btn bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded-lg transition-all relative text-xs md:text-sm';
-                    button.textContent = keyData.main;
-                    
-                    // シンプルなタップ処理
-                    button.addEventListener('click', () => {
-                        if (keyData.type === 'backspace') {
+            setupCyberKeyboard() {
+                // サイバーキーボードのクリックイベント
+                document.querySelectorAll('.cyber-key').forEach(key => {
+                    key.addEventListener('click', () => {
+                        const keyValue = key.dataset.key;
+                        if (keyValue === 'backspace') {
                             this.handleBackspace();
-                        } else if (keyData.type === 'clear') {
+                        } else if (keyValue === 'clear') {
                             this.handleClear();
-                        } else if (keyData.type === 'toggle') {
-                            this.toggleInputMode();
-                        } else if (keyData.type === 'dash') {
-                            this.handleKanaInput('ー');
-                        } else {
-                            this.handleKanaInput(keyData.main);
+                        } else if (keyValue) {
+                            this.handleCharInput(keyValue);
                         }
+                        
+                        // キー押下エフェクト
+                        this.triggerKeyEffect(key);
                     });
-                    
-                    container.appendChild(button);
                 });
+            }
+
+            triggerKeyEffect(keyElement) {
+                keyElement.classList.add('pressed');
+                setTimeout(() => {
+                    keyElement.classList.remove('pressed');
+                }, 200);
             }
 
             handleKeyInput(e) {
@@ -1202,6 +1330,21 @@
                     this.handleBackspace();
                 } else if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
                     this.handleCharInput(e.key.toLowerCase());
+                    
+                    // キーボード上のキーをハイライト
+                    const keyElement = document.querySelector(`[data-key="${e.key.toLowerCase()}"]`);
+                    if (keyElement) {
+                        keyElement.classList.add('active');
+                    }
+                }
+            }
+
+            handleKeyUp(e) {
+                if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+                    const keyElement = document.querySelector(`[data-key="${e.key.toLowerCase()}"]`);
+                    if (keyElement) {
+                        keyElement.classList.remove('active');
+                    }
                 }
             }
 
@@ -1214,20 +1357,6 @@
                 this.soundSystem.play('type');
                 this.updateInput();
                 this.checkWordMatches();
-            }
-
-            handleKanaInput(kana) {
-                if (!this.gameState.gameData.isGameActive) return;
-                
-                const romaji = kanaToRomaji[kana];
-                if (romaji) {
-                    this.gameState.gameData.currentInput += romaji;
-                    this.gameState.gameData.totalKeystrokes++;
-                    
-                    this.soundSystem.play('type');
-                    this.updateInput();
-                    this.checkWordMatches();
-                }
             }
 
             handleBackspace() {
@@ -1257,7 +1386,6 @@
                 for (let i = this.gameState.gameData.words.length - 1; i >= 0; i--) {
                     const word = this.gameState.gameData.words[i];
                     if (word.checkInput(input)) {
-                        // 単語完成
                         this.completeWord(word, i);
                         wordCompleted = true;
                         break;
@@ -1265,7 +1393,6 @@
                 }
                 
                 if (!wordCompleted) {
-                    // 入力が正しいかチェック
                     let isValidInput = false;
                     for (const word of this.gameState.gameData.words) {
                         if (word.romaji.startsWith(input)) {
@@ -1275,12 +1402,10 @@
                     }
                     
                     if (!isValidInput && input.length > 0) {
-                        // 間違った入力
-                        this.gameState.gameData.combo = 0;
-                        this.soundSystem.play('wrong');
-                        this.triggerScreenShake();
+                        this.handleMistake();
                     } else if (isValidInput) {
                         this.gameState.gameData.correctKeystrokes++;
+                        this.gameState.gameData.consecutiveMistakes = 0;
                     }
                 }
                 
@@ -1288,15 +1413,59 @@
                 this.updateUI();
             }
 
+            handleMistake() {
+                this.gameState.gameData.mistakeCount++;
+                this.gameState.gameData.consecutiveMistakes++;
+                this.gameState.gameData.combo = 0;
+                this.soundSystem.play('wrong');
+                this.triggerScreenShake();
+                
+                // 救済システム
+                if (this.gameState.gameData.consecutiveMistakes >= 3 && !this.gameState.gameData.isRescueMode) {
+                    this.activateRescueMode();
+                }
+            }
+
+            activateRescueMode() {
+                this.gameState.gameData.isRescueMode = true;
+                this.gameState.gameData.rescueEndTime = Date.now() + GAME_CONFIG.rescueDuration;
+                this.gameState.gameData.consecutiveMistakes = 0;
+                
+                // 救済モード表示
+                const rescueElement = document.getElementById('rescueMode');
+                if (rescueElement) {
+                    rescueElement.classList.remove('hidden');
+                }
+                
+                this.soundSystem.play('rescue');
+                
+                // 救済モード終了タイマー
+                setTimeout(() => {
+                    this.deactivateRescueMode();
+                }, GAME_CONFIG.rescueDuration);
+            }
+
+            deactivateRescueMode() {
+                this.gameState.gameData.isRescueMode = false;
+                
+                const rescueElement = document.getElementById('rescueMode');
+                if (rescueElement) {
+                    rescueElement.classList.add('hidden');
+                }
+            }
+
             completeWord(word, index) {
                 const wordLength = word.romaji.length;
-                const points = wordLength * 10 * Math.max(1, this.gameState.gameData.combo);
+                const speedLevel = this.gameState.gameData.speedLevel;
+                const bonusMultiplier = GAME_CONFIG.speedLevels[speedLevel].bonusMultiplier;
+                const points = Math.floor(wordLength * 10 * Math.max(1, this.gameState.gameData.combo) * bonusMultiplier);
                 
                 this.gameState.gameData.score += points;
                 this.gameState.gameData.combo++;
                 this.gameState.gameData.wordsTyped++;
                 this.gameState.gameData.correctKeystrokes += wordLength;
                 this.gameState.gameData.currentInput = '';
+                this.gameState.gameData.consecutiveMistakes = 0;
                 
                 if (this.gameState.gameData.combo > this.gameState.gameData.maxCombo) {
                     this.gameState.gameData.maxCombo = this.gameState.gameData.combo;
@@ -1310,10 +1479,69 @@
                     this.soundSystem.play('word_complete');
                 }
                 
+                // スピードレベルアップチェック
+                this.checkSpeedLevelUp();
+                
                 // 単語を配列から削除
                 this.gameState.gameData.words.splice(index, 1);
                 
                 this.updateUI();
+            }
+
+            checkSpeedLevelUp() {
+                const currentTime = Date.now();
+                const playTime = (currentTime - this.gameState.gameData.gameStartTime) / 1000;
+                const wordsTyped = this.gameState.gameData.wordsTyped;
+                
+                let newSpeedLevel = 0;
+                
+                // 時間ベースまたは単語数ベースでレベルアップ
+                if (playTime >= 45 || wordsTyped >= 30) {
+                    newSpeedLevel = 3;
+                } else if (playTime >= 30 || wordsTyped >= 20) {
+                    newSpeedLevel = 2;
+                } else if (playTime >= 15 || wordsTyped >= 10) {
+                    newSpeedLevel = 1;
+                }
+                
+                if (newSpeedLevel > this.gameState.gameData.speedLevel) {
+                    this.gameState.gameData.speedLevel = newSpeedLevel;
+                    this.gameState.gameData.levelUpTime = currentTime + 2000; // 2秒間表示
+                    this.soundSystem.play('speed_up');
+                    this.updateSpeedIndicator();
+                }
+            }
+
+            updateSpeedIndicator() {
+                const speedIndicator = document.getElementById('speedIndicator');
+                const speedLevel = document.getElementById('speedLevel');
+                
+                if (speedIndicator && speedLevel) {
+                    if (this.gameState.gameData.speedLevel > 0) {
+                        speedIndicator.classList.remove('hidden');
+                        speedLevel.textContent = this.gameState.gameData.speedLevel + 1;
+                        
+                        // レベルアップアニメーション
+                        if (Date.now() < this.gameState.gameData.levelUpTime) {
+                            speedIndicator.style.animation = 'combo-pulse 0.5s ease-in-out infinite';
+                            setTimeout(() => {
+                                speedIndicator.style.animation = '';
+                            }, 2000);
+                        }
+                    } else {
+                        speedIndicator.classList.add('hidden');
+                    }
+                }
+            }
+
+            getCurrentSpeedMultiplier() {
+                let multiplier = GAME_CONFIG.speedLevels[this.gameState.gameData.speedLevel].multiplier;
+                
+                if (this.gameState.gameData.isRescueMode) {
+                    multiplier *= GAME_CONFIG.rescueSpeedMultiplier;
+                }
+                
+                return multiplier;
             }
 
             triggerComboEffect() {
@@ -1346,8 +1574,6 @@
 
                 const input = this.gameState.gameData.currentInput;
                 
-                // 入力の色分け表示
-                let displayHTML = '';
                 let isValidPrefix = false;
                 
                 for (const word of this.gameState.gameData.words) {
@@ -1358,14 +1584,12 @@
                 }
                 
                 if (input.length === 0) {
-                    displayHTML = '<span class="text-gray-400">入力待ち...</span>';
+                    inputElement.innerHTML = '<span class="text-gray-400">入力待ち...</span>';
                 } else if (isValidPrefix) {
-                    displayHTML = `<span class="text-green-400">${input}</span>`;
+                    inputElement.innerHTML = `<span class="text-green-400">${input}</span>`;
                 } else {
-                    displayHTML = `<span class="text-red-400">${input}</span>`;
+                    inputElement.innerHTML = `<span class="text-red-400">${input}</span>`;
                 }
-                
-                inputElement.innerHTML = displayHTML;
             }
 
             spawnWord() {
@@ -1375,7 +1599,9 @@
                 const randomWord = words[Math.floor(Math.random() * words.length)];
                 const containerWidth = document.getElementById('wordsContainer')?.offsetWidth || window.innerWidth;
                 const x = Math.random() * (containerWidth - 200) + 50;
-                const speed = GAME_CONFIG.fallSpeeds[this.gameState.gameSettings.difficulty];
+                const baseSpeed = GAME_CONFIG.baseFallSpeeds[this.gameState.gameSettings.difficulty];
+                const speedMultiplier = this.getCurrentSpeedMultiplier();
+                const speed = baseSpeed * speedMultiplier;
                 
                 const word = new Word(randomWord, x, speed);
                 this.gameState.gameData.words.push(word);
@@ -1390,8 +1616,12 @@
             }
 
             updateWordsPosition() {
+                const speedMultiplier = this.getCurrentSpeedMultiplier();
+                
                 for (let i = this.gameState.gameData.words.length - 1; i >= 0; i--) {
                     const word = this.gameState.gameData.words[i];
+                    word.updateSpeed(speedMultiplier);
+                    
                     if (!word.update()) {
                         // 画面外に出た単語
                         this.gameState.gameData.words.splice(i, 1);
@@ -1419,6 +1649,7 @@
                 this.showScreen('game');
                 this.updateUI();
                 this.updateInput();
+                this.updateSpeedIndicator();
                 
                 // タイマー開始
                 this.gameTimer = setInterval(() => {
@@ -1450,6 +1681,7 @@
                 const gameLoop = () => {
                     if (this.gameState.gameData.isGameActive && !this.gameState.gameData.isPaused) {
                         this.updateWordsPosition();
+                        this.updateSpeedIndicator();
                     }
                     
                     if (this.gameState.gameData.isGameActive) {
@@ -1502,6 +1734,9 @@
                     this.wordSpawnTimer = null;
                 }
                 
+                // 救済モード終了
+                this.deactivateRescueMode();
+                
                 // 残った単語を削除
                 this.gameState.gameData.words.forEach(word => word.remove());
                 this.gameState.gameData.words = [];
@@ -1525,11 +1760,12 @@
                 const accuracy = gameData.totalKeystrokes > 0 ? 
                     Math.round((gameData.correctKeystrokes / gameData.totalKeystrokes) * 100) : 100;
                 
-                // XP計算
+                // XP計算（スピードレベルボーナス込み）
                 const baseXP = Math.floor(gameData.score / 100);
                 const comboBonus = Math.floor(gameData.maxCombo / 5) * 10;
                 const accuracyBonus = accuracy >= 95 ? 50 : accuracy >= 90 ? 25 : 0;
-                const totalXP = baseXP + comboBonus + accuracyBonus;
+                const speedLevelBonus = gameData.speedLevel * 20;
+                const totalXP = baseXP + comboBonus + accuracyBonus + speedLevelBonus;
                 
                 // ゲーム記録を保存
                 const gameRecord = {
@@ -1542,7 +1778,8 @@
                     difficulty: this.gameState.gameSettings.difficulty,
                     mode: this.gameState.gameSettings.mode,
                     playTime: playTime,
-                    xpGained: totalXP
+                    xpGained: totalXP,
+                    speedLevel: gameData.speedLevel
                 };
                 
                 // プレイヤーデータ更新
@@ -1587,6 +1824,9 @@
                 }
                 if (this.gameState.playerData.totalGames >= 10 && !this.hasAchievement('games_10')) {
                     achievements.push({ id: 'games_10', name: 'ベテラン', description: '10ゲーム以上プレイ' });
+                }
+                if (gameRecord.speedLevel >= 3 && !this.hasAchievement('speed_master')) {
+                    achievements.push({ id: 'speed_master', name: 'スピードマスター', description: '最高速度レベルに到達' });
                 }
                 
                 achievements.forEach(achievement => {
@@ -1660,37 +1900,41 @@
                     {
                         title: 'ゲームの基本',
                         content: `
-                            <h3 class="font-bold mb-2">タイピングゲームへようこそ！</h3>
+                            <h3 class="font-bold mb-2 text-cyan-300">タイピングゲームへようこそ！</h3>
                             <p class="mb-2">画面上から落ちてくる単語のローマ字を正確に入力します。</p>
                             <p class="mb-2">例：「ポリゴン」→「porigon」</p>
-                            <p>制限時間内にできるだけ多くの単語を入力してスコアを稼ぎましょう！</p>
+                            <p class="mb-2">制限時間内にできるだけ多くの単語を入力してスコアを稼ぎましょう！</p>
+                            <p class="text-cyan-300">下部のサイバーキーボードまたは実際のキーボードで入力できます。</p>
                         `
                     },
                     {
-                        title: 'コンボシステム',
+                        title: 'コンボ・スピードシステム',
                         content: `
-                            <h3 class="font-bold mb-2">コンボでスコアアップ！</h3>
+                            <h3 class="font-bold mb-2 text-cyan-300">コンボでスコアアップ！</h3>
                             <p class="mb-2">連続して単語を正確に入力するとコンボが増加します。</p>
-                            <p class="mb-2">コンボが高いほど獲得スコアが増加します。</p>
-                            <p>ミスをしたり単語を見逃すとコンボがリセットされるので注意！</p>
+                            <p class="mb-2">ゲーム進行に応じて<span class="text-yellow-300">スピードレベル</span>が上昇し、落下速度が速くなります。</p>
+                            <p class="mb-2">スピードレベルが高いほど<span class="text-green-300">ボーナス得点</span>が増加！</p>
+                            <p class="text-red-300">ミスが続くと一時的に落下速度が遅くなる救済システムも搭載。</p>
                         `
                     },
                     {
-                        title: '入力モード',
+                        title: 'サイバーキーボード',
                         content: `
-                            <h3 class="font-bold mb-2">2つの入力モード</h3>
-                            <p class="mb-2"><strong>QWERTYモード：</strong>PCキーボードと同じ配列</p>
-                            <p class="mb-2"><strong>フリックモード：</strong>かな入力（タップでひらがな入力）</p>
-                            <p>ゲーム中でも「切替」ボタンで自由に変更できます。</p>
+                            <h3 class="font-bold mb-2 text-cyan-300">未来的なキーボード体験</h3>
+                            <p class="mb-2">画面下部の<span class="text-cyan-300">サイバーキーボード</span>で入力状況を視覚的に確認。</p>
+                            <p class="mb-2">入力したキーが<span class="text-yellow-300">ネオンエフェクト</span>で光ります。</p>
+                            <p class="mb-2">PCキーボードでの入力も同様にハイライト表示されます。</p>
+                            <p>キーボード学習にも最適な設計です！</p>
                         `
                     },
                     {
                         title: '設定とカスタマイズ',
                         content: `
-                            <h3 class="font-bold mb-2">ゲームをカスタマイズ</h3>
+                            <h3 class="font-bold mb-2 text-cyan-300">ゲームをカスタマイズ</h3>
                             <p class="mb-2"><strong>表示モード：</strong>カタカナ、ひらがな、ミックス</p>
-                            <p class="mb-2"><strong>難易度：</strong>制限時間と単語の落下速度が変化</p>
-                            <p class="mb-2"><strong>統計機能：</strong>プレイ履歴や成長を確認</p>
+                            <p class="mb-2"><strong>難易度：</strong>制限時間と基本落下速度が変化</p>
+                            <p class="mb-2"><strong>統計機能：</strong>プレイ履歴や成長を詳細に記録</p>
+                            <p class="mb-2"><strong>実績システム：</strong>様々な条件で解除される達成バッジ</p>
                             <p>準備ができたらゲームを開始しましょう！</p>
                         `
                     }
@@ -1739,17 +1983,29 @@
                 // モードボタンの状態更新
                 document.querySelectorAll('.mode-btn').forEach(btn => {
                     const isSelected = btn.dataset.mode === this.gameState.gameSettings.mode;
-                    btn.classList.toggle('bg-blue-500', isSelected);
-                    btn.classList.toggle('text-white', isSelected);
-                    btn.classList.toggle('bg-white/20', !isSelected);
+                    if (isSelected) {
+                        btn.style.background = 'linear-gradient(145deg, rgba(0, 255, 255, 0.3), rgba(0, 200, 255, 0.4))';
+                        btn.style.borderColor = '#00ffff';
+                        btn.style.color = '#ffffff';
+                    } else {
+                        btn.style.background = 'linear-gradient(145deg, rgba(0, 30, 60, 0.8), rgba(0, 20, 40, 0.9))';
+                        btn.style.borderColor = 'rgba(0, 255, 255, 0.3)';
+                        btn.style.color = '#00ffff';
+                    }
                 });
                 
                 // 難易度ボタンの状態更新
                 document.querySelectorAll('.difficulty-btn').forEach(btn => {
                     const isSelected = btn.dataset.difficulty === this.gameState.gameSettings.difficulty;
-                    btn.classList.toggle('bg-blue-500', isSelected);
-                    btn.classList.toggle('text-white', isSelected);
-                    btn.classList.toggle('bg-white/20', !isSelected);
+                    if (isSelected) {
+                        btn.style.background = 'linear-gradient(145deg, rgba(0, 255, 255, 0.3), rgba(0, 200, 255, 0.4))';
+                        btn.style.borderColor = '#00ffff';
+                        btn.style.color = '#ffffff';
+                    } else {
+                        btn.style.background = 'linear-gradient(145deg, rgba(0, 30, 60, 0.8), rgba(0, 20, 40, 0.9))';
+                        btn.style.borderColor = 'rgba(0, 255, 255, 0.3)';
+                        btn.style.color = '#00ffff';
+                    }
                 });
                 
                 // サウンド設定
@@ -1806,7 +2062,7 @@
                     });
                     
                     if (playerData.achievements.length === 0) {
-                        achievementsContainer.innerHTML = '<p class="text-white/70">まだ実績がありません</p>';
+                        achievementsContainer.innerHTML = '<p class="text-cyan-300/70">まだ実績がありません</p>';
                     }
                 }
                 
@@ -1817,12 +2073,13 @@
                     
                     playerData.recentGames.slice(0, 10).forEach(game => {
                         const gameElement = document.createElement('div');
-                        gameElement.className = 'bg-white/10 rounded p-3 text-white';
+                        gameElement.className = 'bg-white/10 rounded p-3 text-white border border-cyan-500/30';
                         const date = new Date(game.date).toLocaleDateString('ja-JP');
+                        const speedLevelText = game.speedLevel ? `(SPEED LV.${game.speedLevel + 1})` : '';
                         gameElement.innerHTML = `
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <div class="font-bold">${game.score}pt</div>
+                                    <div class="cyber-font font-bold text-cyan-300">${game.score}pt ${speedLevelText}</div>
                                     <div class="text-sm opacity-75">${date}</div>
                                 </div>
                                 <div class="text-right text-sm">
@@ -1835,7 +2092,7 @@
                     });
                     
                     if (playerData.recentGames.length === 0) {
-                        recentGamesContainer.innerHTML = '<p class="text-white/70">まだゲーム履歴がありません</p>';
+                        recentGamesContainer.innerHTML = '<p class="text-cyan-300/70">まだゲーム履歴がありません</p>';
                     }
                 }
             }
@@ -1860,26 +2117,6 @@
                 this.soundSystem.play('click');
             }
 
-            toggleInputMode() {
-                const currentMode = this.gameState.gameSettings.inputMode;
-                this.gameState.gameSettings.inputMode = currentMode === 'qwerty' ? 'flick' : 'qwerty';
-                this.gameState.saveSettings();
-                this.updateInputModeUI();
-                this.soundSystem.play('click');
-            }
-
-            updateInputModeUI() {
-                const isQwerty = this.gameState.gameSettings.inputMode === 'qwerty';
-                
-                const qwertyKeyboard = document.getElementById('qwertyKeyboard');
-                const flickKeyboard = document.getElementById('flickKeyboard');
-                const inputModeText = document.getElementById('inputModeText');
-                
-                if (qwertyKeyboard) qwertyKeyboard.classList.toggle('hidden', !isQwerty);
-                if (flickKeyboard) flickKeyboard.classList.toggle('hidden', isQwerty);
-                if (inputModeText) inputModeText.textContent = isQwerty ? 'フリック入力' : 'QWERTY入力';
-            }
-
             showScreen(screenName) {
                 const screens = ['menu', 'game', 'settings', 'statistics', 'tutorial', 'pause', 'results', 'credits'];
                 screens.forEach(screen => {
@@ -1890,8 +2127,10 @@
                 });
                 this.gameState.currentScreen = screenName;
                 
-                if (screenName === 'game') {
-                    this.updateInputModeUI();
+                // サイバーキーボードの表示制御
+                const cyberKeyboard = document.getElementById('cyberKeyboard');
+                if (cyberKeyboard) {
+                    cyberKeyboard.style.display = screenName === 'game' ? 'block' : 'none';
                 }
             }
 
@@ -1955,11 +2194,11 @@
                 console.error('ゲーム初期化エラー:', error);
                 // エラーが発生してもページは表示される
                 document.body.innerHTML = `
-                    <div class="game-gradient min-h-screen flex items-center justify-center">
-                        <div class="text-white text-center">
-                            <h1 class="text-4xl font-bold mb-4">CGモデリング タイピングゲーム NEO</h1>
-                            <p class="text-lg mb-4">初期化中にエラーが発生しました</p>
-                            <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    <div class="game-gradient cyber-grid min-h-screen flex items-center justify-center">
+                        <div class="stats-card rounded-xl p-6 text-center">
+                            <h1 class="cyber-font text-4xl font-bold mb-4 text-cyan-400">CGモデリング タイピングゲーム NEO</h1>
+                            <p class="text-lg mb-4 text-white">初期化中にエラーが発生しました</p>
+                            <button onclick="location.reload()" class="cyber-key font-bold py-2 px-4">
                                 再読み込み
                             </button>
                         </div>
@@ -2083,177 +2322,23 @@
                 },
                 getPlayerData: () => {
                     return typingGame ? typingGame.gameState.playerData : null;
+                },
+                setSpeedLevel: (level) => {
+                    if (typingGame && typingGame.gameState.gameData.isGameActive) {
+                        typingGame.gameState.gameData.speedLevel = Math.max(0, Math.min(3, level));
+                        typingGame.updateSpeedIndicator();
+                        console.log(`スピードレベル${level}に設定されました`);
+                    }
+                },
+                activateRescue: () => {
+                    if (typingGame && typingGame.gameState.gameData.isGameActive) {
+                        typingGame.activateRescueMode();
+                        console.log('救済モードを有効にしました');
+                    }
                 }
             };
             console.log('デバッグ機能が有効です: window.typingGameDebug');
         }
     </script>
-
-    <!-- ===== 追加のスタイル（アクセシビリティ） ===== -->
-    <style>
-        /* キーボードフォーカス表示 */
-        .using-keyboard button:focus,
-        .using-keyboard input:focus {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-        }
-        
-        /* 高コントラスト対応 */
-        .high-contrast {
-            filter: contrast(2);
-        }
-        
-        /* アニメーション軽減対応 */
-        .reduced-motion * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-        }
-        
-        /* タッチデバイス最適化 */
-        .touch-device button {
-            min-height: 44px;
-            min-width: 44px;
-        }
-        
-        /* ダークモード対応 */
-        @media (prefers-color-scheme: dark) {
-            .stats-card {
-                background: rgba(0, 0, 0, 0.3);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-        }
-        
-        /* プリント対応 */
-        @media print {
-            .no-print {
-                display: none !important;
-            }
-        }
-        
-        /* カスタムスクロールバー */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-        
-        /* セレクション色 */
-        ::selection {
-            background: rgba(59, 130, 246, 0.3);
-            color: white;
-        }
-        
-        /* フォーカス可能要素のハイライト */
-        button:focus-visible,
-        input:focus-visible {
-            outline: 2px solid #60a5fa;
-            outline-offset: 2px;
-        }
-        
-        /* ゲーム要素の詳細スタイル */
-        .word-card {
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .word-card.completed {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
-        }
-        
-        .word-card.error {
-            background: rgba(239, 68, 68, 0.2) !important;
-            border: 2px solid rgba(239, 68, 68, 0.5);
-        }
-        
-        /* パーティクルエフェクトの改良 */
-        .particle-success {
-            background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
-            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
-        }
-        
-        .particle-combo {
-            background: radial-gradient(circle, #8b5cf6 0%, #7c3aed 100%);
-            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
-        }
-        
-        /* 入力フィードバック */
-        .input-correct {
-            background: rgba(34, 197, 94, 0.1);
-            border: 2px solid rgba(34, 197, 94, 0.3);
-        }
-        
-        .input-error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 2px solid rgba(239, 68, 68, 0.3);
-        }
-        
-        /* レスポンシブ調整 */
-        @media (max-width: 640px) {
-            .mobile-optimized {
-                font-size: 0.875rem;
-            }
-            
-            .mobile-optimized h1 {
-                font-size: 2rem;
-            }
-            
-            .mobile-optimized h2 {
-                font-size: 1.5rem;
-            }
-            
-            .grid-cols-10 {
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-            }
-        }
-        
-        /* ゲーム状態別のビジュアル調整 */
-        .game-active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        }
-        
-        .game-paused {
-            filter: grayscale(0.3) brightness(0.7);
-        }
-        
-        .game-finished {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-        }
-        
-        /* ローディング状態 */
-        .loading {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .loading::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            animation: loading-sweep 2s infinite;
-        }
-        
-        @keyframes loading-sweep {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-    </style>
 </body>
 </html>
