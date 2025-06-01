@@ -1,1544 +1,1737 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CGモデリング タイピングゲーム NEO</title>
+    <title>CGモデリング タイピングゲーム NEO - Ultimate Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Meiryo', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            touch-action: manipulation;
-            -webkit-touch-callout: none;
-            user-select: none;
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        * {
+            font-family: 'Noto Sans JP', sans-serif;
         }
-        canvas {
-            display: block;
+        
+        .game-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        .word-falling {
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            from { transform: translateY(-100px); }
+            to { transform: translateY(100vh); }
+        }
+        
+        .particle {
             position: absolute;
-            top: 0;
-            left: 0;
+            pointer-events: none;
+            animation: particle-burst 1s ease-out forwards;
+        }
+        
+        @keyframes particle-burst {
+            0% { transform: scale(1) translate(0, 0); opacity: 1; }
+            100% { transform: scale(0.5) translate(var(--dx), var(--dy)); opacity: 0; }
+        }
+        
+        .combo-pulse {
+            animation: combo-pulse 0.3s ease-in-out;
+        }
+        
+        @keyframes combo-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .flick-key {
+            position: relative;
+            transition: all 0.15s ease;
+        }
+        
+        .flick-key:active {
+            transform: scale(0.95);
+            background-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .flick-hints {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .flick-key:active .flick-hints {
+            opacity: 1;
+        }
+        
+        .stats-card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #8b5cf6 100%);
+            animation: progress-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes progress-glow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.2); }
+        }
+        
+        .achievement-badge {
+            background: linear-gradient(45deg, #fbbf24, #f59e0b);
+            animation: achievement-glow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes achievement-glow {
+            0% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
+        }
+        
+        .screen-shake {
+            animation: screen-shake 0.3s ease-in-out;
+        }
+        
+        @keyframes screen-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-optimized {
+                padding: 0.5rem;
+            }
         }
     </style>
 </head>
-<body>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.js"></script>
+<body class="game-gradient min-h-screen overflow-hidden select-none">
+    <!-- ゲーム全体のコンテナ -->
+    <div id="gameContainer" class="relative w-full h-screen overflow-hidden">
+        
+        <!-- メインメニュー画面 -->
+        <div id="menuScreen" class="absolute inset-0 flex flex-col items-center justify-center">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
+                    CGモデリング
+                </h1>
+                <h2 class="text-2xl md:text-4xl font-medium text-white/90 mb-2">
+                    タイピングゲーム NEO
+                </h2>
+                <p class="text-lg text-white/80 font-light">Ultimate Edition v4.0</p>
+            </div>
+            
+            <!-- 現在の設定表示 -->
+            <div class="stats-card rounded-lg p-4 mb-6 text-white text-center">
+                <p class="text-sm opacity-90">
+                    <span id="currentMode">カタカナ</span> / 
+                    <span id="currentDifficulty">ふつう</span>
+                </p>
+            </div>
+            
+            <!-- メニューボタン -->
+            <div class="flex flex-col gap-4 w-80 max-w-full px-4">
+                <button id="startGame" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    ゲームスタート
+                </button>
+                <button id="tutorialBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    チュートリアル
+                </button>
+                <button id="settingsBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    設定
+                </button>
+                <button id="statisticsBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    統計・履歴
+                </button>
+            </div>
+        </div>
+        
+        <!-- ゲーム画面 -->
+        <div id="gameScreen" class="absolute inset-0 hidden">
+            <!-- ゲーム上部UI -->
+            <div class="absolute top-0 left-0 right-0 z-10 p-4">
+                <div class="flex justify-between items-start">
+                    <!-- 左側：スコア、コンボ -->
+                    <div class="stats-card rounded-lg p-3 text-white">
+                        <div class="text-sm opacity-90">Score</div>
+                        <div id="score" class="text-2xl font-bold">0</div>
+                        <div id="combo" class="text-sm mt-1 hidden">
+                            Combo: <span class="font-bold text-yellow-300">0</span>x
+                        </div>
+                    </div>
+                    
+                    <!-- 右側：タイマー、ポーズ -->
+                    <div class="flex items-center gap-3">
+                        <div class="stats-card rounded-lg p-3 text-white text-center">
+                            <div class="text-sm opacity-90">Time</div>
+                            <div id="timeLeft" class="text-2xl font-bold">60</div>
+                        </div>
+                        <button id="pauseBtn" class="bg-white/20 hover:bg-white/30 text-white p-3 rounded-lg transition-all">
+                            ⏸️
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 落下単語エリア -->
+            <div id="wordsContainer" class="absolute inset-0 pointer-events-none"></div>
+            
+            <!-- パーティクルエフェクトコンテナ -->
+            <div id="particlesContainer" class="absolute inset-0 pointer-events-none"></div>
+            
+            <!-- 入力エリア -->
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+                <!-- 現在の入力表示 -->
+                <div class="stats-card rounded-lg p-4 mb-4 text-center">
+                    <div class="text-white text-lg mb-2">入力中:</div>
+                    <div id="currentInput" class="text-2xl font-mono bg-black/30 rounded px-4 py-2 text-white min-h-[40px]"></div>
+                </div>
+                
+                <!-- 入力モード切替 -->
+                <div class="flex justify-center gap-2 mb-4">
+                    <button id="toggleInput" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all">
+                        <span id="inputModeText">フリック入力</span>に切替
+                    </button>
+                </div>
+                
+                <!-- キーボードエリア -->
+                <div id="keyboardContainer">
+                    <!-- QWERTY キーボード -->
+                    <div id="qwertyKeyboard" class="grid grid-cols-10 gap-1 md:gap-2 max-w-4xl mx-auto"></div>
+                    
+                    <!-- フリック キーボード -->
+                    <div id="flickKeyboard" class="hidden grid grid-cols-5 gap-2 max-w-xl mx-auto"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 設定画面 -->
+        <div id="settingsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
+            <div class="stats-card rounded-xl p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">設定</h2>
+                
+                <!-- 表示モード設定 -->
+                <div class="mb-6">
+                    <h3 class="text-white font-semibold mb-3">表示モード</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="katakana">カタカナモード</button>
+                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="hiragana">ひらがなモード</button>
+                        <button class="mode-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-mode="mixed">ミックスモード</button>
+                    </div>
+                </div>
+                
+                <!-- 難易度設定 -->
+                <div class="mb-6">
+                    <h3 class="text-white font-semibold mb-3">難易度</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="easy">かんたん (90秒)</button>
+                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="normal">ふつう (60秒)</button>
+                        <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg transition-all" data-difficulty="hard">むずかしい (45秒)</button>
+                    </div>
+                </div>
+                
+                <!-- サウンド設定 -->
+                <div class="mb-6">
+                    <label class="flex items-center justify-between text-white">
+                        <span>サウンド</span>
+                        <input type="checkbox" id="soundToggle" class="toggle" checked>
+                    </label>
+                </div>
+                
+                <button id="backToMenu" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                    メニューに戻る
+                </button>
+            </div>
+        </div>
+        
+        <!-- 統計画面 -->
+        <div id="statisticsScreen" class="absolute inset-0 hidden overflow-y-auto p-4">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold text-white">統計・履歴</h2>
+                    <button id="backToMenuFromStats" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
+                        戻る
+                    </button>
+                </div>
+                
+                <!-- 総合統計 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="stats-card rounded-lg p-4 text-center">
+                        <div class="text-white/80 text-sm">総プレイ回数</div>
+                        <div id="totalGames" class="text-2xl font-bold text-white">0</div>
+                    </div>
+                    <div class="stats-card rounded-lg p-4 text-center">
+                        <div class="text-white/80 text-sm">最高スコア</div>
+                        <div id="bestScore" class="text-2xl font-bold text-yellow-300">0</div>
+                    </div>
+                    <div class="stats-card rounded-lg p-4 text-center">
+                        <div class="text-white/80 text-sm">平均WPM</div>
+                        <div id="averageWPM" class="text-2xl font-bold text-green-300">0</div>
+                    </div>
+                </div>
+                
+                <!-- レベル進行状況 -->
+                <div class="stats-card rounded-lg p-4 mb-6">
+                    <h3 class="text-white font-semibold mb-3">レベル進行状況</h3>
+                    <div class="flex items-center gap-4">
+                        <div class="text-white text-xl font-bold">Lv.<span id="currentLevel">1</span></div>
+                        <div class="flex-1">
+                            <div class="bg-black/30 rounded-full h-4 overflow-hidden">
+                                <div id="levelProgress" class="progress-bar h-full rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="text-white/80 text-sm">
+                            <span id="currentXP">0</span>/<span id="nextLevelXP">100</span> XP
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 達成記録 -->
+                <div class="stats-card rounded-lg p-4 mb-6">
+                    <h3 class="text-white font-semibold mb-3">達成記録</h3>
+                    <div id="achievements" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- 達成記録がここに動的追加される -->
+                    </div>
+                </div>
+                
+                <!-- 最近のゲーム履歴 -->
+                <div class="stats-card rounded-lg p-4">
+                    <h3 class="text-white font-semibold mb-3">最近のゲーム履歴</h3>
+                    <div id="recentGames" class="space-y-2">
+                        <!-- ゲーム履歴がここに動的追加される -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 結果画面 -->
+        <div id="resultsScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
+            <div class="stats-card rounded-xl p-6 w-full max-w-lg text-center">
+                <h2 class="text-3xl font-bold text-white mb-6">ゲーム結果</h2>
+                
+                <!-- 獲得XP表示 -->
+                <div id="xpGained" class="achievement-badge text-white font-bold py-2 px-4 rounded-lg mb-4 hidden">
+                    <span>XP +</span><span id="xpAmount">0</span>
+                </div>
+                
+                <!-- スコア表示 -->
+                <div class="text-4xl font-bold text-yellow-300 mb-4">
+                    <span id="finalScore">0</span> pt
+                </div>
+                
+                <!-- 詳細統計 -->
+                <div class="grid grid-cols-2 gap-4 mb-6 text-white">
+                    <div>
+                        <div class="text-sm opacity-80">入力単語数</div>
+                        <div id="finalWords" class="text-xl font-bold">0</div>
+                    </div>
+                    <div>
+                        <div class="text-sm opacity-80">最大コンボ</div>
+                        <div id="finalCombo" class="text-xl font-bold">0</div>
+                    </div>
+                    <div>
+                        <div class="text-sm opacity-80">WPM</div>
+                        <div id="finalWPM" class="text-xl font-bold">0</div>
+                    </div>
+                    <div>
+                        <div class="text-sm opacity-80">正確性</div>
+                        <div id="finalAccuracy" class="text-xl font-bold">0%</div>
+                    </div>
+                </div>
+                
+                <!-- 新記録表示 -->
+                <div id="newRecord" class="achievement-badge text-white font-bold py-2 px-4 rounded-lg mb-4 hidden">
+                    🏆 新記録達成！
+                </div>
+                
+                <!-- レベルアップ表示 -->
+                <div id="levelUp" class="achievement-badge text-white font-bold py-2 px-4 rounded-lg mb-6 hidden">
+                    🎉 レベルアップ！ Lv.<span id="newLevel">2</span>
+                </div>
+                
+                <!-- ボタン -->
+                <div class="flex flex-col gap-3">
+                    <button id="playAgain" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                        もう一度プレイ
+                    </button>
+                    <button id="backToMenuFromResults" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                        メニューに戻る
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- チュートリアル画面 -->
+        <div id="tutorialScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center p-4">
+            <div class="stats-card rounded-xl p-6 w-full max-w-2xl">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">チュートリアル</h2>
+                
+                <div id="tutorialContent" class="text-white space-y-4 mb-6">
+                    <!-- チュートリアル内容がここに表示される -->
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="tutorialPrev" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all">
+                        前へ
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <span id="tutorialStep" class="text-white">1 / 4</span>
+                    </div>
+                    <button id="tutorialNext" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all">
+                        次へ
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ポーズ画面 -->
+        <div id="pauseScreen" class="absolute inset-0 hidden flex flex-col items-center justify-center bg-black/50">
+            <div class="stats-card rounded-xl p-6 text-center">
+                <h2 class="text-2xl font-bold text-white mb-6">ポーズ中</h2>
+                <div class="flex flex-col gap-3">
+                    <button id="resumeGame" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                        ゲーム再開
+                    </button>
+                    <button id="restartGame" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                        リスタート
+                    </button>
+                    <button id="quitGame" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-8 rounded-lg transition-all">
+                        メニューに戻る
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-const sketch = (p) => {
-    // Game constants
-    const GAME_DURATIONS = { tutorial: 120, easy: 90, normal: 60, hard: 45 };
-    const WORD_FALL_SPEEDS = { tutorial: 0.4, easy: 0.7, normal: 1.0, hard: 1.5 };
-    const SPAWN_INTERVALS = { tutorial: 3500, easy: 2500, normal: 2000, hard: 1500 };
-    const GAME_VERSION = 'v3.0.0 Final Mix'; // Updated version
+        // ===== ゲーム設定とデータ =====
+        const GAME_CONFIG = {
+            durations: { easy: 90, normal: 60, hard: 45 },
+            fallSpeeds: { easy: 3, normal: 4, hard: 5 },
+            spawnIntervals: { easy: 3000, normal: 2000, hard: 1500 },
+            version: 'v4.0.0 Ultimate Edition'
+        };
 
-    const GAME_STATES = {
-        MENU: 'menu', SETTINGS: 'settings', HIGHSCORES: 'highscores',
-        TUTORIAL: 'tutorial', PLAYING: 'playing', PAUSED: 'paused', RESULTS: 'results'
-    };
+        // カナ文字→ローマ字変換マップ
+        const kanaToRomaji = {
+            'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
+            'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
+            'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
+            'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
+            'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
+            'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
+            'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
+            'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
+            'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
+            'わ': 'wa', 'を': 'wo', 'ん': 'n',
+            'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
+            'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
+            'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
+            'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
+            'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
+            'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo',
+            'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho',
+            'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho',
+            'にゃ': 'nya', 'にゅ': 'nyu', 'にょ': 'nyo',
+            'ひゃ': 'hya', 'ひゅ': 'hyu', 'ひょ': 'hyo',
+            'みゃ': 'mya', 'みゅ': 'myu', 'みょ': 'myo',
+            'りゃ': 'rya', 'りゅ': 'ryu', 'りょ': 'ryo',
+            'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo',
+            'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo',
+            'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo',
+            'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo',
+            // カタカナ
+            'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
+            'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
+            'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
+            'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
+            'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
+            'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
+            'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
+            'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
+            'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
+            'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n',
+            'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
+            'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
+            'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
+            'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
+            'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
+            'キャ': 'kya', 'キュ': 'kyu', 'キョ': 'kyo',
+            'シャ': 'sha', 'シュ': 'shu', 'ショ': 'sho',
+            'チャ': 'cha', 'チュ': 'chu', 'チョ': 'cho',
+            'ニャ': 'nya', 'ニュ': 'nyu', 'ニョ': 'nyo',
+            'ヒャ': 'hya', 'ヒュ': 'hyu', 'ヒョ': 'hyo',
+            'ミャ': 'mya', 'ミュ': 'myu', 'ミョ': 'myo',
+            'リャ': 'rya', 'リュ': 'ryu', 'リョ': 'ryo',
+            'ギャ': 'gya', 'ギュ': 'gyu', 'ギョ': 'gyo',
+            'ジャ': 'ja', 'ジュ': 'ju', 'ジョ': 'jo',
+            'ビャ': 'bya', 'ビュ': 'byu', 'ビョ': 'byo',
+            'ピャ': 'pya', 'ピュ': 'pyu', 'ピョ': 'pyo',
+            'ー': '-'
+        };
 
-    // Game variables
-    let width, height;
-    let currentInput = '';
-    let words = [];
-    let particles = [];
-    let soundEnabled = true;
-    let bgmPlaying = false;
-    let gameTimerInterval = null;
-    let isGamePausedManually = false;
-
-    // Helper: Katakana to Hiragana
-    function katakanaToHiragana(str) {
-        return str.replace(/[\u30a1-\u30f6]/g, function(match) {
-            var chr = match.charCodeAt(0) - 0x60;
-            return String.fromCharCode(chr);
-        });
-    }
-
-    const kanaToRomaji = {
-        // Hiragana
-        'あ': 'a', 'い': 'i', 'う': 'u', 'え': 'e', 'お': 'o',
-        'か': 'ka', 'き': 'ki', 'く': 'ku', 'け': 'ke', 'こ': 'ko',
-        'さ': 'sa', 'し': 'shi', 'す': 'su', 'せ': 'se', 'そ': 'so',
-        'た': 'ta', 'ち': 'chi', 'つ': 'tsu', 'て': 'te', 'と': 'to',
-        'な': 'na', 'に': 'ni', 'ぬ': 'nu', 'ね': 'ne', 'の': 'no',
-        'は': 'ha', 'ひ': 'hi', 'ふ': 'fu', 'へ': 'he', 'ほ': 'ho',
-        'ま': 'ma', 'み': 'mi', 'む': 'mu', 'め': 'me', 'も': 'mo',
-        'や': 'ya', 'ゆ': 'yu', 'よ': 'yo',
-        'ら': 'ra', 'り': 'ri', 'る': 'ru', 'れ': 're', 'ろ': 'ro',
-        'わ': 'wa', 'を': 'wo', 'ん': 'n',
-        'が': 'ga', 'ぎ': 'gi', 'ぐ': 'gu', 'げ': 'ge', 'ご': 'go',
-        'ざ': 'za', 'じ': 'ji', 'ず': 'zu', 'ぜ': 'ze', 'ぞ': 'zo',
-        'だ': 'da', 'ぢ': 'ji', 'づ': 'zu', 'で': 'de', 'ど': 'do',
-        'ば': 'ba', 'び': 'bi', 'ぶ': 'bu', 'べ': 'be', 'ぼ': 'bo',
-        'ぱ': 'pa', 'ぴ': 'pi', 'ぷ': 'pu', 'ぺ': 'pe', 'ぽ': 'po',
-        'きゃ': 'kya', 'きゅ': 'kyu', 'きょ': 'kyo',
-        'しゃ': 'sha', 'しゅ': 'shu', 'しょ': 'sho',
-        'ちゃ': 'cha', 'ちゅ': 'chu', 'ちょ': 'cho',
-        'にゃ': 'nya', 'にゅ': 'nyu', 'にょ': 'nyo',
-        'ひゃ': 'hya', 'ひゅ': 'hyu', 'ひょ': 'hyo',
-        'みゃ': 'mya', 'みゅ': 'myu', 'みょ': 'myo',
-        'りゃ': 'rya', 'りゅ': 'ryu', 'りょ': 'ryo',
-        'ぎゃ': 'gya', 'ぎゅ': 'gyu', 'ぎょ': 'gyo',
-        'じゃ': 'ja', 'じゅ': 'ju', 'じょ': 'jo',
-        'びゃ': 'bya', 'びゅ': 'byu', 'びょ': 'byo',
-        'ぴゃ': 'pya', 'ぴゅ': 'pyu', 'ぴょ': 'pyo',
-        'うぃ': 'wi', 'うぇ': 'we', 'うぉ': 'wo', // Note: 'wo' is also 'を'
-        'ふぁ': 'fa', 'ふぃ': 'fi', 'ふぇ': 'fe', 'ふぉ': 'fo',
-        'つぁ': 'tsa', 'つぃ': 'tsi', 'つぇ': 'tse', 'つぉ': 'tso',
-        'ちぇ': 'che', 'しぇ': 'she', 'じぇ': 'je',
-        'っ': 'xtsu', // Small tsu - placeholder, actual handling is context-dependent (doubles next consonant)
-        'ぁ': 'xa', 'ぃ': 'xi', 'ぅ': 'xu', 'ぇ': 'xe', 'ぉ': 'xo', // Small vowels
-        'ゃ': 'xya', 'ゅ': 'xyu', 'ょ': 'xyo',
-        // Katakana
-        'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
-        'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
-        'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
-        'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
-        'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',
-        'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
-        'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
-        'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
-        'ラ': 'ra', 'リ': 'ri', 'ル': 'ru', 'レ': 're', 'ロ': 'ro',
-        'ワ': 'wa', 'ヲ': 'wo', 'ン': 'n',
-        'ガ': 'ga', 'ギ': 'gi', 'グ': 'gu', 'ゲ': 'ge', 'ゴ': 'go',
-        'ザ': 'za', 'ジ': 'ji', 'ズ': 'zu', 'ゼ': 'ze', 'ゾ': 'zo',
-        'ダ': 'da', 'ヂ': 'ji', 'ヅ': 'zu', 'デ': 'de', 'ド': 'do',
-        'バ': 'ba', 'ビ': 'bi', 'ブ': 'bu', 'ベ': 'be', 'ボ': 'bo',
-        'パ': 'pa', 'ピ': 'pi', 'プ': 'pu', 'ペ': 'pe', 'ポ': 'po',
-        'キャ': 'kya', 'キュ': 'kyu', 'キョ': 'kyo',
-        'シャ': 'sha', 'シュ': 'shu', 'ショ': 'sho',
-        'チャ': 'cha', 'チュ': 'chu', 'チョ': 'cho',
-        'ニャ': 'nya', 'ニュ': 'nyu', 'ニョ': 'nyo',
-        'ヒャ': 'hya', 'ヒュ': 'hyu', 'ヒョ': 'hyo',
-        'ミャ': 'mya', 'ミュ': 'myu', 'ミョ': 'myo',
-        'リャ': 'rya', 'リュ': 'ryu', 'リョ': 'ryo',
-        'ギャ': 'gya', 'ギュ': 'gyu', 'ギョ': 'gyo',
-        'ジャ': 'ja', 'ジュ': 'ju', 'ジョ': 'jo',
-        'ビャ': 'bya', 'ビュ': 'byu', 'ビョ': 'byo',
-        'ピャ': 'pya', 'ピュ': 'pyu', 'ピョ': 'pyo',
-        'ウィ': 'wi', 'ウェ': 'we', 'ウォ': 'wo',
-        'ファ': 'fa', 'フィ': 'fi', 'フェ': 'fe', 'フォ': 'fo',
-        'ツァ': 'tsa', 'ツィ': 'tsi', 'ツェ': 'tse', 'ツォ': 'tso',
-        'チェ': 'che', 'シェ': 'she', 'ジェ': 'je',
-        'ッ': 'xtsu',
-        'ァ': 'xa', 'ィ': 'xi', 'ゥ': 'xu', 'ェ': 'xe', 'ォ': 'xo',
-        'ャ': 'xya', 'ュ': 'xyu', 'ョ': 'xyo',
-        // Special symbols from flick keyboard
-        '゛': '_DAKUTEN_', '゜': '_HANDAKUTEN_',
-        // Small kana not covered by 'x' prefix that might come from "小" key
-        'ゎ': 'xwa', // Small wa (rare)
-        // ー (長音符 - long vowel mark)
-        'ー': '-',
-    };
-
-    function convertKanaToRomaji(kana) {
-        if (kanaToRomaji[kana]) {
-            return kanaToRomaji[kana];
-        }
-        // Basic fallback for unknown kana, though the map should be comprehensive
-        console.warn("Unknown Kana for Romaji conversion:", kana);
-        return kana;
-    }
-
-    // VRoid Studio related words (Katakana) - from typing2.html
-    const vroidWords = [
-        { japanese: 'ブイロイド', romaji: 'buiroido' }, { japanese: 'スタジオ', romaji: 'sutajio' },
-        { japanese: 'アバター', romaji: 'abataa' }, { japanese: 'モデリング', romaji: 'moderingu' },
-        { japanese: 'テクスチャ', romaji: 'tekusuchaa' }, { japanese: 'ボーン', romaji: 'boon' },
-        { japanese: 'リギング', romaji: 'rigingu' }, { japanese: 'アニメーション', romaji: 'animeeshon' },
-        { japanese: 'エクスポート', romaji: 'ekusupooto' }, { japanese: 'インポート', romaji: 'inpooto' },
-        { japanese: 'マテリアル', romaji: 'materiaru' }, { japanese: 'メッシュ', romaji: 'messhu' },
-        { japanese: 'スキニング', romaji: 'sukiningu' }, { japanese: 'ウェイト', romaji: 'weito' },
-        { japanese: 'バーテックス', romaji: 'baatekkusu' }, { japanese: 'ポリゴン', romaji: 'porigon' },
-        { japanese: 'シェーダー', romaji: 'sheedaa' }, { japanese: 'ライティング', romaji: 'raitingu' },
-        { japanese: 'レンダリング', romaji: 'rendaringu' }, { japanese: 'かみのけ', romaji: 'kaminoke' },
-        { japanese: 'ひふ', romaji: 'hifu' }, { japanese: 'ふく', romaji: 'fuku' },
-        { japanese: 'めだま', romaji: 'medama' }, { japanese: 'かお', romaji: 'kao' },
-        { japanese: 'からだ', romaji: 'karada' }, { japanese: 'うで', romaji: 'ude' },
-        { japanese: 'あし', romaji: 'ashi' }, { japanese: 'てのひら', romaji: 'tenohira' },
-        { japanese: 'ゆび', romaji: 'yubi' }, { japanese: 'つめ', romaji: 'tsume' },
-        { japanese: 'ポーズ', romaji: 'poozu' }, { japanese: 'まゆげ', romaji: 'mayuge' }
-    ];
-
-    // CG Modeling Words (Katakana) - Full list from typing.html
-    const cgModelingWordsKatakana = [
-        { japanese: 'ユーブイ', romaji: 'yuubui' }, { japanese: 'ノーマルマップ', romaji: 'noomarumappu' },
-        { japanese: 'アンビエントオクルージョン', romaji: 'anbientookuruujon' }, { japanese: 'サブディビジョン', romaji: 'sabudibijon' },
-        { japanese: 'トランスフォーム', romaji: 'toransufoomu' }, { japanese: 'アーマチュア', romaji: 'aamachua' },
-        { japanese: 'キーフレーム', romaji: 'kiifureemu' }, { japanese: 'スカルプト', romaji: 'sukarupito' },
-        { japanese: 'ダイナミックトポロジー', romaji: 'dainamikkutoporojii' }, { japanese: 'ローポリ', romaji: 'roopori' },
-        { japanese: 'ハイポリ', romaji: 'haipori' }, { japanese: 'ピービーアール', romaji: 'piibiiaaru' },
-        { japanese: 'ブループリント', romaji: 'buruupurinto' }, { japanese: 'ノード', romaji: 'noodo' },
-        { japanese: 'エミッシブ', romaji: 'emisshibu' }, { japanese: 'ラフネス', romaji: 'rafunesu' },
-        { japanese: 'メタリック', romaji: 'metarikku' }, { japanese: 'コリジョン', romaji: 'korijon' },
-        { japanese: 'パーティクル', romaji: 'paatikuru' }, { japanese: 'プロシージャル', romaji: 'puroshijaru' },
-        { japanese: 'ベクター', romaji: 'bekutaa' }, { japanese: 'クォータニオン', romaji: 'kuootanion' },
-        { japanese: 'シェイプキー', romaji: 'sheipukii' }, { japanese: 'コンポジット', romaji: 'konpojitto' },
-        { japanese: 'デバッグ', romaji: 'debaggu' }, { japanese: 'ビルド', romaji: 'birudo' },
-        { japanese: 'アセット', romaji: 'asetto' }, { japanese: 'ワイヤーフレーム', romaji: 'waiaafureemu' },
-        { japanese: 'シーン', romaji: 'shiin' }, { japanese: 'オブジェクト', romaji: 'obujekuto' },
-        { japanese: 'モディファイア', romaji: 'modifuaia' }, { japanese: 'ピクセル', romaji: 'pikuseru' },
-        { japanese: 'ブーリアン', romaji: 'buurian' }, { japanese: 'カーソル', romaji: 'kaasoru' },
-        { japanese: 'グリッド', romaji: 'guriddo' }, { japanese: 'イージング', romaji: 'iijingu' },
-        { japanese: 'カーブ', romaji: 'kaabu' }, { japanese: 'デプス', romaji: 'depusu' },
-        { japanese: 'アルファ', romaji: 'arufa' }, { japanese: 'ブラー', romaji: 'buraa' },
-        { japanese: 'カリング', romaji: 'karingu' }, { japanese: 'デカール', romaji: 'dekaaru' },
-        { japanese: 'エフェクト', romaji: 'efekuto' }, { japanese: 'フィルタ', romaji: 'firuta' },
-        { japanese: 'ギズモ', romaji: 'gizumo' }, { japanese: 'ハイトマップ', romaji: 'haitomappu' },
-        { japanese: 'イラディアンス', romaji: 'iradeiansu' }, { japanese: 'レイヤー', romaji: 'reiyaa' },
-        { japanese: 'マッピング', romaji: 'mappingu' }, { japanese: 'ミップマップ', romaji: 'mippumappu' },
-        { japanese: 'オクルージョン', romaji: 'okuruujon' }, { japanese: 'パースペクティブ', romaji: 'paasupekutibu' },
-        { japanese: 'プリミティブ', romaji: 'purimitibu' }, { japanese: 'リフレクション', romaji: 'rifurekushon' },
-        { japanese: 'スケール', romaji: 'sukeeru' }, { japanese: 'タイル', romaji: 'tairu' },
-        { japanese: 'ビューポート', romaji: 'byuupooto' },
-        { japanese: 'アセットパイプライン', romaji: 'asettopaipurain' },
-        { japanese: 'インスタンス', romaji: 'insutansu' },
-        { japanese: 'エクストルード', romaji: 'ekusutoruudo' },
-        { japanese: 'オクルージョンカリング', romaji: 'okuruujonkaringu' },
-        { japanese: 'カプセル', romaji: 'kapuseru' },
-        { japanese: 'キネマティクス', romaji: 'kinematikusu' },
-        { japanese: 'グローバルイルミネーション', romaji: 'guroobaruirumineeshon' },
-        { japanese: 'コンストレイント', romaji: 'konsutoreinto' },
-        { japanese: 'サーフェスモデリング', romaji: 'saafesumoderingu' },
-        { japanese: 'ジオメトリ', romaji: 'jiometori' },
-        { japanese: 'シンメトリ', romaji: 'shinmetori' },
-        { japanese: 'スイープ', romaji: 'suiipu' },
-        { japanese: 'スプライン', romaji: 'supurain' },
-        { japanese: 'セルシェーディング', romaji: 'serushieedingu' },
-        { japanese: 'テッセレーション', romaji: 'tessereeshon' },
-        { japanese: 'デフォーメーション', romaji: 'defoomeeshon' },
-        { japanese: 'トゥーンシェーディング', romaji: 'tuunshieedingu' },
-        { japanese: 'ドープシート', romaji: 'doopushiito' },
-        { japanese: 'ナーバス', romaji: 'naabasu' },
-        { japanese: 'ノンリニアアニメーション', romaji: 'nonriniaanimeeshon' },
-        { japanese: 'ハードサーフェス', romaji: 'haadosaafesu' },
-        { japanese: 'ハイトフィールド', romaji: 'haitofiirudo' },
-        { japanese: 'バンプマッピング', romaji: 'banpumappingu' },
-        { japanese: 'ピボットポイント', romaji: 'pibottopointo' },
-        { japanese: 'フィレット', romaji: 'firetto' },
-        { japanese: 'フォトンマッピング', romaji: 'fotonmappingu' },
-        { japanese: 'ベイク', romaji: 'beiku' },
-        { japanese: 'ベジェカーブ', romaji: 'bejiekaabu' },
-        { japanese: 'ヘアーシステム', romaji: 'heaashisutemu' },
-        { japanese: 'ボリュームレンダリング', romaji: 'boryuumurendaringu' },
-        { japanese: 'マーカー', romaji: 'maakaa' },
-        { japanese: 'マッスルスシステム', romaji: 'massurusushisutemu' },
-        { japanese: 'ミップマッピング', romaji: 'mippumappingu' },
-        { japanese: 'モーフィング', romaji: 'moofingu' },
-        { japanese: 'モーションパス', romaji: 'mooshonpasu' },
-        { japanese: 'ラティス', romaji: 'ratisu' },
-        { japanese: 'リトポロジー', romaji: 'ritoporojii' },
-        { japanese: 'レベルオブディテール', romaji: 'reberuobuditeeru' },
-        { japanese: 'レイディオシティ', romaji: 'reidioshiti' },
-        { japanese: 'ロフト', romaji: 'rofuto' },
-        { japanese: 'ウェイトペイント', romaji: 'weitopeinto' },
-        { japanese: 'クロスシミュレーション', romaji: 'kuroshushimyureeshon' },
-        { japanese: 'デジタルクレイ', romaji: 'dejitarukurei' },
-        { japanese: 'フローマップ', romaji: 'furoomappu' },
-        { japanese: 'プロップ', romaji: 'puroppu' },
-        { japanese: 'メッシュスムージング', romaji: 'messhusumuujingu' },
-        { japanese: 'リバースキネマティクス', romaji: 'ribaasukinematikusu' },
-        { japanese: 'サブサーフェススキャタリング', romaji: 'sabusāfesusukyattaringu' },
-        { japanese: 'アンラップ', romaji: 'anrappu' },
-        { japanese: '頂点法線', romaji: 'choutenhoosen' }
-    ];
-
-    // Initialize Hiragana word lists dynamically
-    const vroidWordsHiragana = [];
-    const cgModelingWordsHiragana = [];
-
-    vroidWords.forEach(w => vroidWordsHiragana.push({ japanese: katakanaToHiragana(w.japanese), romaji: w.romaji }));
-    cgModelingWordsKatakana.forEach(w => cgModelingWordsHiragana.push({ japanese: katakanaToHiragana(w.japanese), romaji: w.romaji }));
-
-    let allKatakanaWords = [];
-    let allHiraganaWords = [];
-
-    let gameState = GAME_STATES.MENU;
-    let score = 0;
-    let timeLeft = GAME_DURATIONS.normal;
-    let lastSpawnTime = 0;
-    let difficulty = 'normal';
-    let wordMode = 'katakana';
-    let combo = 0;
-    let maxCombo = 0;
-    let virtualKeyboard = [];
-    let tutorialStep = 0;
-    let isVirtualKeyboardVisible = false;
-    let isMobile = false;
-    let gameStats = { wordsTyped: 0, totalKeystrokes: 0, correctKeystrokes: 0, totalCharsTyped: 0, correctCharsTyped: 0 };
-
-    // Flick input variables
-    let flickKeyboardLayout = [];
-    let isFlickInputActive = false;
-    let touchState = { startX: 0, startY: 0, currentKey: null, isFlicking: false, lastTapTime: 0, doubleTapDelay: 300 };
-
-    let sounds = {
-        type: null, correct: null, word_complete: null, wrong: null,
-        combo_increase: null, combo_break: null, click: null, bgm: null
-    };
-    let highScores = { easy: 0, normal: 0, hard: 0 };
-
-    // Visual Keyboard Overlay
-    let keyboardOverlay = {
-        layout: [
-            ['q','w','e','r','t','y','u','i','o','p'],
-            ['a','s','d','f','g','h','j','k','l'],
-            ['z','x','c','v','b','n','m']
-        ],
-        keyStates: {}, // To store highlight time for each key
-        keyWidth: 0, keyHeight: 0, startX: 0, startY: 0, padding: 2,
-        highlightDuration: 20 // frames
-    };
-
-    // Screen Shake Effect
-    let screenShakeTime = 0;
-    let screenShakeMagnitude = 0;
-
-    function triggerScreenShake(duration = 10, magnitude = 3) {
-        screenShakeTime = duration;
-        screenShakeMagnitude = magnitude;
-    }
-
-    class Button {
-        constructor(x, y, w, h, text, action, icon = null) {
-            this.x = x; this.y = y; this.w = w; this.h = h;
-            this.text = text; this.action = action; this.icon = icon;
-        }
-        isClicked(px, py) {
-            return px >= this.x && px <= this.x + this.w && py >= this.y && py <= this.y + this.h;
-        }
-        draw(isSelected = false, customColor = null) {
-            let buttonColor = customColor ? customColor : (isSelected ? p.color(255, 220, 100, 240) : p.color(255, 255, 255, 220));
-            p.fill(buttonColor);
-            p.stroke(100); p.strokeWeight(2);
-            p.rect(this.x, this.y, this.w, this.h, 10);
-            p.fill(50); p.textAlign(p.CENTER, p.CENTER);
-            let baseTextSize = Math.min(this.h * 0.38, 22); // Slightly reduced for regular text
-            if (this.icon) baseTextSize = Math.min(this.h * 0.45, 28); // Slightly reduced for icon
-            p.textSize(baseTextSize);
-            p.text(this.icon ? this.icon : this.text, this.x + this.w / 2, this.y + this.h / 2);
-        }
-    }
-
-    class ToggleButton extends Button {
-        constructor(x, y, w, h, textOn, textOff, isOn, action) {
-            super(x, y, w, h, isOn ? textOn : textOff, action);
-            this.textOn = textOn; this.textOff = textOff; this.isOn = isOn;
-        }
-        toggle() {
-            this.isOn = !this.isOn;
-            this.text = this.isOn ? this.textOn : this.textOff;
-            if (typeof this.action === 'function') this.action.call(this);
-        }
-        draw() {
-            let buttonColor = this.isOn ? p.color(100, 255, 100, 220) : p.color(255, 100, 100, 220);
-            super.draw(false, buttonColor);
-        }
-    }
-
-    class Word {
-        constructor(wordData) {
-            this.japanese = wordData.japanese; this.romaji = wordData.romaji;
-            this.x = p.random(p.textWidth(this.japanese) + 50, width - (p.textWidth(this.japanese) + 50));
-            this.y = -50;
-            this.baseSpeed = WORD_FALL_SPEEDS[difficulty];
-            this.speedRandomComponent = p.random(-0.1, 0.15);
-            this.typedLength = 0; this.missTyped = false; this.highlightTime = 0;
-            this.isActive = true; this.isCleared = false; this.alpha = 255;
-        }
-
-        update() {
-            if (!this.isActive) return;
-
-            if (this.isCleared) { // Word cleared, animate out
-                this.alpha -= 25; // Fade out
-                this.y -= 2;      // Move up slightly
-                if (this.alpha <= 0) this.isActive = false;
-                return;
-            }
-
-            let currentSpeed = this.baseSpeed * (difficulty === 'hard' ? 1.2 : 1) + this.speedRandomComponent;
-            this.y += currentSpeed;
-
-            if (this.highlightTime > 0) this.highlightTime--;
-            if (this.y > height + 50) {
-                 this.isActive = false;
-                 if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
-                    if (combo > 0) playSound(sounds.combo_break);
-                    combo = 0;
-                 }
-            }
-        }
-
-        draw() {
-            if (!this.isActive) return;
-            let currentAlpha = this.isCleared ? this.alpha : (this.missTyped ? 200 : 240); // Increased opacity
-            let bgColor = this.highlightTime > 0 ? p.color(255, 255, 150, currentAlpha) : p.color(255, 255, 255, currentAlpha);
-            p.fill(bgColor);
-            p.stroke(100, currentAlpha); p.strokeWeight(2);
-            // Adjust rectWidth calculation if text sizes change significantly, for now it should be okay.
-            const rectWidth = Math.max(160, p.textWidth(this.japanese) + 50, p.textWidth(this.romaji) + 50); // Slightly increased base width
-            p.rect(this.x - 10, this.y - 28, rectWidth, 56, 10); // Slightly increased height and adjusted y
-
-            p.fill(50, this.alpha); p.textAlign(p.LEFT);
-            p.textSize(18); p.text(this.japanese, this.x, this.y - 7); // Adjusted y for new text size & rect
-
-            p.textSize(16); // Increased Romaji text size
-            if (this.typedLength > 0) {
-                p.fill(0, 150, 0, this.alpha);
-                p.text(this.romaji.substring(0, this.typedLength), this.x, this.y + 15);
-            }
-            p.fill(this.missTyped ? p.color(200,0,0, this.alpha) : p.color(50, this.alpha));
-            let typedWidth = p.textWidth(this.romaji.substring(0, this.typedLength));
-            p.text(this.romaji.substring(this.typedLength), this.x + typedWidth, this.y + 17); // Adjusted y for new text size & rect
-        }
-
-        isFullyTypedBy(input) { return !this.isCleared && this.romaji === input; }
-
-        updateStateFromInput(input) {
-            if (this.isCleared) return;
-            if (this.romaji.startsWith(input)) {
-                this.missTyped = false; this.highlightTime = 5; this.typedLength = input.length;
-            } else {
-                let i = 0;
-                while (i < input.length && i < this.romaji.length && input[i] === this.romaji[i]) i++;
-                this.typedLength = i;
-                this.missTyped = input.length > i;
-                this.highlightTime = 0;
-            }
-        }
-        
-        markCleared() {
-            this.isCleared = true;
-        }
-    }
-
-    class Particle {
-        constructor(x, y, pColor) {
-            this.x = x; this.y = y;
-            this.vx = p.random(-4, 4); this.vy = p.random(-5, 1);
-            this.life = p.random(20, 40); this.maxLife = this.life;
-            this.size = p.random(5, 12);
-            this.color = pColor || p.color(p.random(200,255), p.random(180,220), p.random(0,100)); // Gold/Orange tones
-        }
-        update() {
-            this.x += this.vx; this.y += this.vy;
-            this.vy += 0.2; this.life--;
-            this.vx *= 0.98; // air resistance
-        }
-        draw() {
-            let alpha = p.map(this.life, 0, this.maxLife, 0, 255);
-            p.fill(p.red(this.color), p.green(this.color), p.blue(this.color), alpha);
-            p.noStroke(); p.ellipse(this.x, this.y, this.size, this.size);
-        }
-        isDead() { return this.life <= 0; }
-    }
-
-    const menuButtons = []; const difficultySettingButtons = []; const modeSettingButtons = [];
-    const settingsScreenButtons = []; const pauseMenuButtons = [];
-    let gameplayPauseButton;
-
-    function createButtons() {
-        const buttonWidth = Math.min(300, width - 40);
-        const buttonHeight = Math.min(60, height / 10);
-        const centerX = width / 2 - buttonWidth / 2;
-        const itemSpacing = buttonHeight + 10;
-
-        menuButtons.length = 0;
-        menuButtons.push(new Button(centerX, height / 2 - buttonHeight * 2.5, buttonWidth, buttonHeight, "スタート", () => { startGame(); }));
-        menuButtons.push(new Button(centerX, height / 2 - buttonHeight * 1.25, buttonWidth, buttonHeight, "チュートリアル", () => { startTutorial(); }));
-        menuButtons.push(new Button(centerX, height / 2, buttonWidth, buttonHeight, "設定", () => { gameState = GAME_STATES.SETTINGS; }));
-        menuButtons.push(new Button(centerX, height / 2 + buttonHeight * 1.25, buttonWidth, buttonHeight, "ハイスコア", () => { gameState = GAME_STATES.HIGHSCORES; }));
-
-        let currentY = height / 3 - buttonHeight * 1.5;
-        modeSettingButtons.length = 0;
-        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "カタカナモード", () => { wordMode = 'katakana'; })); currentY += itemSpacing;
-        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ひらがなモード", () => { wordMode = 'hiragana'; })); currentY += itemSpacing;
-        modeSettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ミックスモード", () => { wordMode = 'mixed'; })); currentY += itemSpacing * 1.5;
-
-        difficultySettingButtons.length = 0;
-        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "かんたん", () => { difficulty = 'easy'; })); currentY += itemSpacing;
-        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "ふつう", () => { difficulty = 'normal'; })); currentY += itemSpacing;
-        difficultySettingButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "むずかしい", () => { difficulty = 'hard'; })); currentY += itemSpacing * 1.5;
-
-        settingsScreenButtons.length = 0;
-        const soundToggle = new ToggleButton(centerX, currentY, buttonWidth, buttonHeight, "サウンド: オン", "サウンド: オフ", soundEnabled,
-            function() {
-                soundEnabled = this.isOn;
-                if (sounds.bgm) {
-                    if (soundEnabled && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) && !bgmPlaying) playBackgroundMusic();
-                    else if (!soundEnabled && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
-                }
-            }
-        );
-        settingsScreenButtons.push(soundToggle); currentY += itemSpacing;
-
-        if (isMobile) {
-            const flickToggle = new ToggleButton(centerX, currentY, buttonWidth, buttonHeight, "入力: フリック", "入力: QWERTY", isFlickInputActive,
-                function() {
-                    isFlickInputActive = this.isOn;
-                    if (isFlickInputActive) {
-                        if (flickKeyboardLayout.length === 0) createFlickKeyboard(); // Ensure layout exists
-                        isVirtualKeyboardVisible = false; // Hide QWERTY if flick is active
-                    } else {
-                        isVirtualKeyboardVisible = true; // Show QWERTY if flick is inactive
-                    }
-                }
-            );
-            settingsScreenButtons.push(flickToggle); currentY += itemSpacing;
-        }
-
-        settingsScreenButtons.push(new Button(centerX, currentY, buttonWidth, buttonHeight, "もどる", () => { gameState = GAME_STATES.MENU; }));
-
-        pauseMenuButtons.length = 0;
-        const pauseButtonWidth = Math.min(250, width - 60); const pauseButtonHeight = Math.min(50, height / 12);
-        const pauseCenterX = width / 2 - pauseButtonWidth / 2; let pauseY = height / 2 - pauseButtonHeight * 1.5 - 10;
-        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "ゲーム再開", () => { resumeGame(); })); pauseY += pauseButtonHeight + 15;
-        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "リトライ", () => { retryGame(); })); pauseY += pauseButtonHeight + 15;
-        pauseMenuButtons.push(new Button(pauseCenterX, pauseY, pauseButtonWidth, pauseButtonHeight, "メニューに戻る", () => { returnToMenu(); }));
-
-        const gpButtonSize = Math.min(50, width/15, height/15);
-        gameplayPauseButton = new Button(width - gpButtonSize - 15, 15, gpButtonSize, gpButtonSize, "", () => { pauseGame(); }, "||");
-    }
-
-    function createVirtualKeyboard() {
-        virtualKeyboard = []; 
-        const keys = [
-            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-            ['z', 'x', 'c', 'v', 'b', 'n', 'm']
-        ];
-        const keySize = Math.min(width / 11, 45);
-        const padding = Math.max(2, keySize * 0.05);
-        const totalKeyboardHeight = (keySize + padding) * 4.5; 
-        const startY = height - totalKeyboardHeight;
-
-        for (let row = 0; row < keys.length; row++) {
-            const numKeysInRow = keys[row].length;
-            const rowWidth = numKeysInRow * keySize + (numKeysInRow - 1) * padding;
-            let startX = (width - rowWidth) / 2;
-            for (let col = 0; col < numKeysInRow; col++) {
-                virtualKeyboard.push({
-                    key: keys[row][col], x: startX + col * (keySize + padding),
-                    y: startY + row * (keySize + padding), width: keySize, height: keySize,
-                    label: keys[row][col].toUpperCase()
-                });
-            }
-        }
-        const specialKeyHeight = keySize; const backspaceWidth = keySize * 1.8;
-        const clearKeyWidth = width * 0.6; const spacebarY = startY + keys.length * (keySize + padding) + padding;
-        
-        let lastKeyInThirdRow = virtualKeyboard[virtualKeyboard.length-1]; // 'm' key
-        let lastKeyInSecondRow = virtualKeyboard[virtualKeyboard.length-1 - (keys[2].length)]; // 'l' key
-
-        virtualKeyboard.push({
-            key: 'backspace', label: '←',
-            x: lastKeyInThirdRow.x + keySize + padding, 
-            y: lastKeyInThirdRow.y,
-            width: backspaceWidth, height: specialKeyHeight
-        });
-
-        // Add 'フリック' (Flick) toggle key to QWERTY
-        const flickToggleKeyWidth = keySize * 2;
-        virtualKeyboard.push({
-            key: 'toggle_flick', label: 'フリック',
-            x: (width - clearKeyWidth) / 2 - flickToggleKeyWidth - padding, // Position left of clear key
-            y: spacebarY,
-            width: flickToggleKeyWidth, height: specialKeyHeight
-        });
-
-        virtualKeyboard.push({
-            key: 'clear', label: '消去',
-            x: (width - clearKeyWidth) / 2 , // Original X for clear key
-            y: spacebarY,
-            width: clearKeyWidth - flickToggleKeyWidth - padding, // Adjust width of clear key
-            height: specialKeyHeight
-        });
-    }
-
-    function initKeyboardOverlay() {
-        keyboardOverlay.keyWidth = Math.max(25, width / 25);
-        keyboardOverlay.keyHeight = keyboardOverlay.keyWidth;
-        keyboardOverlay.padding = Math.max(2, keyboardOverlay.keyWidth * 0.1);
-        const firstRowWidth = keyboardOverlay.layout[0].length * (keyboardOverlay.keyWidth + keyboardOverlay.padding) - keyboardOverlay.padding;
-        keyboardOverlay.startX = (width - firstRowWidth) / 2;
-        keyboardOverlay.startY = height - (keyboardOverlay.layout.length * (keyboardOverlay.keyHeight + keyboardOverlay.padding) + keyboardOverlay.keyHeight * 0.5); // Position higher
-    }
-
-    function createFlickKeyboard() {
-        flickKeyboardLayout = [];
-        const keyRows = 4;
-        const mainKeyCols = 3;
-        const utilityKeyCols = 1; // For ABC, backspace, clear etc.
-
-        const availableHeight = height * 0.4; // Max 40% of screen for keyboard
-        const yPadding = 10;
-        let keyHeight = (availableHeight - (keyRows - 1) * yPadding) / keyRows;
-
-        const availableWidth = width;
-        const xPadding = 5;
-        let keyWidth = (availableWidth - (mainKeyCols + utilityKeyCols -1) * xPadding ) / (mainKeyCols + utilityKeyCols);
-
-        // Make keys squarish, but prioritize height calculation for screen fit.
-        keyHeight = Math.min(keyHeight, keyWidth * 1.2); // Ensure keys are not too tall
-        keyWidth = Math.min(keyWidth, keyHeight * 1.2); // Ensure keys are not too wide
-
-        const totalKeyboardActualWidth = (mainKeyCols * keyWidth) + ((mainKeyCols -1) * xPadding) + keyWidth + xPadding; // Main 3 cols + 1 utility col
-        const startX = (width - totalKeyboardActualWidth) / 2;
-        const totalFlickKeyboardHeight = (keyRows * keyHeight) + ((keyRows - 1) * yPadding);
-        const startY = height - totalFlickKeyboardHeight - 10; // 10px padding from bottom
-
-        const keysDef = [
-            { label: 'あ', id: 'a_row', flicks: { center: 'あ', left: 'い', up: 'う', right: 'え', down: 'お' } },
-            { label: 'か', id: 'ka_row', flicks: { center: 'か', left: 'き', up: 'く', right: 'け', down: 'こ' } },
-            { label: 'さ', id: 'sa_row', flicks: { center: 'さ', left: 'し', up: 'す', right: 'せ', down: 'そ' } },
-            { label: 'た', id: 'ta_row', flicks: { center: 'た', left: 'ち', up: 'つ', right: 'て', down: 'と' } },
-            { label: 'な', id: 'na_row', flicks: { center: 'な', left: 'に', up: 'ぬ', right: 'ね', down: 'の' } },
-            { label: 'は', id: 'ha_row', flicks: { center: 'は', left: 'ひ', up: 'ふ', right: 'へ', down: 'ほ' } },
-            { label: 'ま', id: 'ma_row', flicks: { center: 'ま', left: 'み', up: 'む', right: 'め', down: 'も' } },
-            { label: 'や', id: 'ya_row', flicks: { center: 'や', left: 'ゃ', up: 'ゆ', right: 'ゅ', down: 'よ', centerAlt: 'ょ'} }, // Added smalls
-            { label: 'ら', id: 'ra_row', flicks: { center: 'ら', left: 'り', up: 'る', right: 'れ', down: 'ろ' } },
-            { label: 'わ', id: 'wa_row', flicks: { center: 'わ', left: 'を', up: 'ん', down: 'ー' } }, // Added long vowel mark
-            { label: '小', id: 'small_kana', flicks: { center: 'っ', left: 'ゃ', up: 'ゅ', right: 'ょ', down: 'ぇ'} },
-            { label: '゛゜', id: 'dakuten_handakuten', flicks: { center: '゛', up: '゜'} }
+        // VRoidとCGモデリング用語データ
+        const vroidWords = [
+            { japanese: 'ブイロイド', romaji: 'buiroido' },
+            { japanese: 'スタジオ', romaji: 'sutajio' },
+            { japanese: 'アバター', romaji: 'abataa' },
+            { japanese: 'モデリング', romaji: 'moderingu' },
+            { japanese: 'テクスチャ', romaji: 'tekusuchaa' },
+            { japanese: 'ボーン', romaji: 'boon' },
+            { japanese: 'リギング', romaji: 'rigingu' },
+            { japanese: 'アニメーション', romaji: 'animeeshon' },
+            { japanese: 'エクスポート', romaji: 'ekusupooto' },
+            { japanese: 'インポート', romaji: 'inpooto' },
+            { japanese: 'マテリアル', romaji: 'materiaru' },
+            { japanese: 'メッシュ', romaji: 'messhu' },
+            { japanese: 'スキニング', romaji: 'sukiningu' },
+            { japanese: 'ウェイト', romaji: 'weito' },
+            { japanese: 'バーテックス', romaji: 'baatekkusu' },
+            { japanese: 'ポリゴン', romaji: 'porigon' },
+            { japanese: 'シェーダー', romaji: 'sheedaa' },
+            { japanese: 'ライティング', romaji: 'raitingu' },
+            { japanese: 'レンダリング', romaji: 'rendaringu' },
+            { japanese: 'かみのけ', romaji: 'kaminoke' },
+            { japanese: 'ひふ', romaji: 'hifu' },
+            { japanese: 'ふく', romaji: 'fuku' },
+            { japanese: 'めだま', romaji: 'medama' },
+            { japanese: 'かお', romaji: 'kao' },
+            { japanese: 'からだ', romaji: 'karada' },
+            { japanese: 'うで', romaji: 'ude' },
+            { japanese: 'あし', romaji: 'ashi' },
+            { japanese: 'てのひら', romaji: 'tenohira' },
+            { japanese: 'ゆび', romaji: 'yubi' },
+            { japanese: 'つめ', romaji: 'tsume' },
+            { japanese: 'ポーズ', romaji: 'poozu' },
+            { japanese: 'まゆげ', romaji: 'mayuge' }
         ];
 
-        let currentX = startX;
-        let currentY = startY;
-        let keysInRow = 0;
+        const cgModelingWords = [
+            { japanese: 'ユーブイ', romaji: 'yuubui' },
+            { japanese: 'ノーマルマップ', romaji: 'noomarumappu' },
+            { japanese: 'アンビエントオクルージョン', romaji: 'anbientookuruujon' },
+            { japanese: 'サブディビジョン', romaji: 'sabudibijon' },
+            { japanese: 'トランスフォーム', romaji: 'toransufoomu' },
+            { japanese: 'アーマチュア', romaji: 'aamachua' },
+            { japanese: 'キーフレーム', romaji: 'kiifureemu' },
+            { japanese: 'スカルプト', romaji: 'sukarupito' },
+            { japanese: 'ダイナミックトポロジー', romaji: 'dainamikkutoporojii' },
+            { japanese: 'ローポリ', romaji: 'roopori' },
+            { japanese: 'ハイポリ', romaji: 'haipori' },
+            { japanese: 'ピービーアール', romaji: 'piibiiaaru' },
+            { japanese: 'ブループリント', romaji: 'buruupurinto' },
+            { japanese: 'ノード', romaji: 'noodo' },
+            { japanese: 'エミッシブ', romaji: 'emisshibu' },
+            { japanese: 'ラフネス', romaji: 'rafunesu' },
+            { japanese: 'メタリック', romaji: 'metarikku' },
+            { japanese: 'コリジョン', romaji: 'korijon' },
+            { japanese: 'パーティクル', romaji: 'paatikuru' },
+            { japanese: 'プロシージャル', romaji: 'puroshijaru' },
+            { japanese: 'ベクター', romaji: 'bekutaa' },
+            { japanese: 'クォータニオン', romaji: 'kuootanion' },
+            { japanese: 'シェイプキー', romaji: 'sheipukii' },
+            { japanese: 'コンポジット', romaji: 'konpojitto' },
+            { japanese: 'デバッグ', romaji: 'debaggu' },
+            { japanese: 'ビルド', romaji: 'birudo' },
+            { japanese: 'アセット', romaji: 'asetto' },
+            { japanese: 'ワイヤーフレーム', romaji: 'waiaafureemu' },
+            { japanese: 'シーン', romaji: 'shiin' },
+            { japanese: 'オブジェクト', romaji: 'obujekuto' },
+            { japanese: 'モディファイア', romaji: 'modifuaia' },
+            { japanese: 'ピクセル', romaji: 'pikuseru' },
+            { japanese: 'ブーリアン', romaji: 'buurian' },
+            { japanese: 'カーソル', romaji: 'kaasoru' },
+            { japanese: 'グリッド', romaji: 'guriddo' },
+            { japanese: 'イージング', romaji: 'iijingu' },
+            { japanese: 'カーブ', romaji: 'kaabu' },
+            { japanese: 'デプス', romaji: 'depusu' },
+            { japanese: 'アルファ', romaji: 'arufa' },
+            { japanese: 'ブラー', romaji: 'buraa' },
+            { japanese: 'カリング', romaji: 'karingu' },
+            { japanese: 'デカール', romaji: 'dekaaru' },
+            { japanese: 'エフェクト', romaji: 'efekuto' },
+            { japanese: 'フィルタ', romaji: 'firuta' },
+            { japanese: 'ギズモ', romaji: 'gizumo' },
+            { japanese: 'ハイトマップ', romaji: 'haitomappu' },
+            { japanese: 'イラディアンス', romaji: 'iradeiansu' },
+            { japanese: 'レイヤー', romaji: 'reiyaa' },
+            { japanese: 'マッピング', romaji: 'mappingu' },
+            { japanese: 'ミップマップ', romaji: 'mippumappu' },
+            { japanese: 'オクルージョン', romaji: 'okuruujon' },
+            { japanese: 'パースペクティブ', romaji: 'paasupekutibu' },
+            { japanese: 'プリミティブ', romaji: 'purimitibu' },
+            { japanese: 'リフレクション', romaji: 'rifurekushon' },
+            { japanese: 'スケール', romaji: 'sukeeru' },
+            { japanese: 'タイル', romaji: 'tairu' },
+            { japanese: 'ビューポート', romaji: 'byuupooto' }
+        ];
 
-        for (let i = 0; i < keysDef.length; i++) {
-            flickKeyboardLayout.push({
-                ...keysDef[i],
-                x: currentX, y: currentY, w: keyWidth, h: keyHeight
+        // カタカナをひらがなに変換
+        function katakanaToHiragana(str) {
+            return str.replace(/[\u30a1-\u30f6]/g, function(match) {
+                return String.fromCharCode(match.charCodeAt(0) - 0x60);
             });
-            keysInRow++;
-            currentX += keyWidth + padding;
-            if (keysInRow >= numCols) {
-                keysInRow = 0;
-                currentX = startX;
-                currentY += keyHeight + padding;
-            }
         }
 
-        // Add utility keys (Backspace, Clear) in a separate column or row
-        currentY = startY; // Reset Y for utility column (example)
-        currentX = startX + (numCols * (keyWidth + padding)); // Position to the right of main keys
+        // 単語リストの初期化
+        const allWords = {
+            katakana: [...vroidWords, ...cgModelingWords],
+            hiragana: [...vroidWords, ...cgModelingWords].map(word => ({
+                japanese: katakanaToHiragana(word.japanese),
+                romaji: word.romaji
+            }))
+        };
 
-        flickKeyboardLayout.push({ label: '←', id: 'backspace', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'backspace' } });
-        currentY += keyHeight + padding;
-        flickKeyboardLayout.push({ label: '消去', id: 'clear', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'clear' } });
-        currentY += keyHeight + padding;
-        // Example: Add a dedicated small tsu key if needed, though "小" covers it.
-        // flickKeyboardLayout.push({ label: 'っ', id: 'small_tsu', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'っ'} });
-        // currentY += keyHeight + padding;
-        flickKeyboardLayout.push({ label: 'ABC', id: 'toggle_qwerty', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'toggle_qwerty' } });
-
-
-    }
-
-    function drawFlickKeyboard() {
-        // flickKeyboardLayout.push({ label: 'あ', x: currentX, y: currentY, w: keyWidth, h: keyHeight, flicks: { center: 'あ' } });
-    }
-
-    function drawFlickKeyboard() {
-        if (flickKeyboardLayout.length === 0 && isMobile && isFlickInputActive) { // Ensure layout is created if needed
-            createFlickKeyboard();
-        }
-        if (flickKeyboardLayout.length === 0) return;
-
-
-        for (const key of flickKeyboardLayout) {
-            p.fill(230, 230, 230, 220);
-            p.stroke(150);
-            p.strokeWeight(1);
-            p.rect(key.x, key.y, key.w, key.h, 8);
-            p.fill(30);
-            p.textAlign(p.CENTER, p.CENTER);
-            p.textSize(Math.min(key.w, key.h) * 0.35); // Adjusted for potentially smaller keys / more text
-            p.text(key.label, key.x + key.w / 2, key.y + key.h / 2);
-
-            if (touchState.isFlicking && touchState.currentKey === key) {
-                p.fill(0, 0, 0, 100); // Dark overlay on main key
-                p.rect(key.x, key.y, key.w, key.h, 8);
-
-                // Draw flick hints
-                p.textSize(Math.min(key.w, key.h) * 0.3);
-                const flickHintOffsetX = key.w * 0.7;
-                const flickHintOffsetY = key.h * 0.7;
-
-                if (key.flicks.up) {
-                    p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w / 2, key.y - flickHintOffsetY, key.w*0.6, key.h*0.6);
-                    p.fill(255); p.text(key.flicks.up, key.x + key.w / 2, key.y - flickHintOffsetY);
-                }
-                if (key.flicks.down) {
-                     p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w / 2, key.y + key.h + flickHintOffsetY, key.w*0.6, key.h*0.6);
-                    p.fill(255); p.text(key.flicks.down, key.x + key.w / 2, key.y + key.h + flickHintOffsetY);
-                }
-                if (key.flicks.left) {
-                     p.fill(50, 100, 200, 200); p.ellipse(key.x - flickHintOffsetX, key.y + key.h / 2, key.w*0.6, key.h*0.6);
-                    p.fill(255); p.text(key.flicks.left, key.x - flickHintOffsetX, key.y + key.h / 2);
-                }
-                if (key.flicks.right) {
-                     p.fill(50, 100, 200, 200); p.ellipse(key.x + key.w + flickHintOffsetX, key.y + key.h / 2, key.w*0.6, key.h*0.6);
-                    p.fill(255); p.text(key.flicks.right, key.x + key.w + flickHintOffsetX, key.y + key.h / 2);
-                }
-            }
-        }
-    }
-    
-    function playSound(soundObj, volume = 1.0) {
-        if (soundEnabled && soundObj) {
-            soundObj.volume = volume;
-            soundObj.currentTime = 0; 
-            soundObj.play().catch(e => console.warn(`Error playing sound ${soundObj.src || 'unknown'}:`, e));
-        }
-    }
-
-    function loadSound(path, defaultVolume = 1.0) {
-        try {
-            const audio = new Audio(path);
-            audio.volume = defaultVolume;
-            audio.onerror = () => {
-                console.warn(`Sound not loaded or error: ${path}. Game will run without this sound.`);
-                for (let key in sounds) { 
-                    if (sounds[key] && sounds[key].src && sounds[key].src.endsWith(path)) {
-                        sounds[key] = null; break;
-                    }
-                }
-            };
-            return audio;
-        } catch (e) {
-            console.warn(`Could not attempt to load sound ${path}: ${e}`);
-            return null;
-        }
-    }
-
-    function loadSounds() {
-        sounds.type = loadSound('sounds/type.mp3', 0.7);
-        sounds.correct = loadSound('sounds/correct.mp3', 0.6);
-        sounds.word_complete = loadSound('sounds/word_complete.mp3', 0.8);
-        sounds.wrong = loadSound('sounds/wrong.mp3', 0.7);
-        sounds.combo_increase = loadSound('sounds/combo_increase.mp3', 0.8);
-        sounds.combo_break = loadSound('sounds/combo_break.mp3', 0.7);
-        sounds.click = loadSound('sounds/click.mp3', 0.5);
-        sounds.bgm = loadSound('sounds/bgm.mp3', 0.2);
-        if (sounds.bgm) sounds.bgm.loop = true;
-    }
-
-    function startGame(isRetry = false) {
-        gameState = GAME_STATES.PLAYING; isGamePausedManually = false; p.loop();
-        score = 0; timeLeft = GAME_DURATIONS[difficulty];
-        words = []; particles = []; currentInput = '';
-        lastSpawnTime = p.millis(); combo = 0; maxCombo = 0;
-        gameStats = { wordsTyped: 0, totalKeystrokes: 0, correctKeystrokes: 0, totalCharsTyped: 0, correctCharsTyped: 0 };
-        playSound(sounds.click);
-        if (soundEnabled && sounds.bgm && !bgmPlaying) playBackgroundMusic();
-        startTimer();
-    }
-
-    function startTutorial() {
-        difficulty = 'tutorial'; wordMode = 'katakana'; tutorialStep = 0;
-        startGame(); gameState = GAME_STATES.TUTORIAL;
-    }
-
-    function pauseGame() {
-        if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
-            isGamePausedManually = true; gameState = GAME_STATES.PAUSED;
-            if (sounds.bgm && bgmPlaying) sounds.bgm.pause();
-            p.noLoop();
-        }
-    }
-    function resumeGame() {
-        if (gameState === GAME_STATES.PAUSED && isGamePausedManually) {
-            isGamePausedManually = false;
-            gameState = (difficulty === 'tutorial' && tutorialStep < 3) ? GAME_STATES.TUTORIAL : GAME_STATES.PLAYING;
-            if (soundEnabled && sounds.bgm && !bgmPlaying) playBackgroundMusic();
-            p.loop();
-        }
-    }
-    function retryGame() {
-        if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); sounds.bgm.currentTime = 0; bgmPlaying = false; }
-        startGame(true);
-    }
-    function returnToMenu() {
-        if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
-        gameState = GAME_STATES.MENU; isGamePausedManually = false; p.loop(); stopTimer();
-    }
-
-    p.setup = function() {
-        width = p.windowWidth; height = p.windowHeight;
-        p.createCanvas(width, height); p.textFont('Meiryo, Arial');
-        
-        // Consolidate all words
-        allKatakanaWords = [...vroidWords, ...cgModelingWordsKatakana];
-        allHiraganaWords = [...vroidWordsHiragana, ...cgModelingWordsHiragana];
-        
-        loadSounds();
-        isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        loadHighScores();
-        createButtons();
-        if (isMobile) {
-            createVirtualKeyboard();
-            createFlickKeyboard(); // Pre-calculate flick keyboard layout as well
-        }
-        initKeyboardOverlay(); 
-    };
-
-    function startTimer() {
-        stopTimer();
-        gameTimerInterval = setInterval(() => {
-            if (!isGamePausedManually && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-                if (timeLeft > 0) timeLeft--;
-                if (timeLeft <= 0) {
-                    gameState = GAME_STATES.RESULTS;
-                    if (sounds.bgm && bgmPlaying) { sounds.bgm.pause(); bgmPlaying = false; }
-                    if (difficulty !== 'tutorial') checkAndSaveHighScore();
-                    stopTimer(); p.noLoop();
-                }
-            }
-        }, 1000);
-    }
-    function stopTimer() { if (gameTimerInterval) { clearInterval(gameTimerInterval); gameTimerInterval = null; } }
-    
-    function loadHighScores() {
-         try {
-            const savedScores = localStorage.getItem('cgTypingHighScores_NEO'); 
-            if (savedScores) {
-                highScores = JSON.parse(savedScores);
-                if (highScores.easy == null) highScores.easy = 0; 
-                if (highScores.normal == null) highScores.normal = 0;
-                if (highScores.hard == null) highScores.hard = 0;
-            } else highScores = { easy: 0, normal: 0, hard: 0 };
-        } catch (e) { console.error("Error loading high scores:", e); highScores = { easy: 0, normal: 0, hard: 0 }; }
-    }
-
-    p.draw = function() {
-        p.background(102, 126, 234); 
-        for(let i = 0; i < height; i++) {
-            let inter = p.map(i, 0, height, 0, 1);
-            let c1 = p.color(102, 126, 234); let c2 = p.color(118, 75, 162);
-            let c = p.lerpColor(c1, c2, inter); p.stroke(c); p.line(0, i, width, i);
-        }
-        p.noStroke();
-
-        p.push();
-        if (screenShakeTime > 0 && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-            const sx = p.random(-screenShakeMagnitude, screenShakeMagnitude);
-            const sy = p.random(-screenShakeMagnitude, screenShakeMagnitude);
-            p.translate(sx, sy);
-            screenShakeTime--;
-        }
-
-        if (gameState === GAME_STATES.MENU) drawMenu();
-        else if (gameState === GAME_STATES.SETTINGS) drawSettings();
-        else if (gameState === GAME_STATES.HIGHSCORES) drawHighScores();
-        else if (gameState === GAME_STATES.PLAYING) drawGameScreen();
-        else if (gameState === GAME_STATES.TUTORIAL) drawTutorialScreen();
-        else if (gameState === GAME_STATES.PAUSED) { p.pop(); drawPauseScreen(); } 
-        else if (gameState === GAME_STATES.RESULTS) { p.pop(); drawResultsScreen(); } 
-        else { p.pop(); } 
-        
-        if (gameState !== GAME_STATES.PAUSED && gameState !== GAME_STATES.RESULTS) {
-             p.pop(); 
-        }
-
-        if (!isMobile && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-            drawKeyboardOverlay();
-        }
-        for (let key in keyboardOverlay.keyStates) {
-            if (keyboardOverlay.keyStates[key] > 0) keyboardOverlay.keyStates[key]--;
-        }
-    };
-    
-    function drawKeyboardOverlay() {
-        let currentY = keyboardOverlay.startY;
-        for (let r = 0; r < keyboardOverlay.layout.length; r++) {
-            let row = keyboardOverlay.layout[r];
-            let rowWidth = row.length * (keyboardOverlay.keyWidth + keyboardOverlay.padding) - keyboardOverlay.padding;
-            let currentX = (width - rowWidth) / 2 + (r === 1 ? keyboardOverlay.keyWidth * 0.25 : (r === 2 ? keyboardOverlay.keyWidth * 0.5 : 0)); 
-
-            for (let keyChar of row) {
-                const isHighlighted = keyboardOverlay.keyStates[keyChar] && keyboardOverlay.keyStates[keyChar] > 0;
-                p.fill(isHighlighted ? p.color(0, 255, 0, 220) : p.color(50, 50, 50, 150));
-                p.stroke(200, 150); p.strokeWeight(1);
-                p.rect(currentX, currentY, keyboardOverlay.keyWidth, keyboardOverlay.keyHeight, 3);
+        // ===== ゲーム状態管理 =====
+        class GameState {
+            constructor() {
+                this.currentScreen = 'menu';
+                this.gameSettings = {
+                    mode: 'katakana',
+                    difficulty: 'normal',
+                    soundEnabled: true,
+                    inputMode: 'qwerty'
+                };
+                this.gameData = {
+                    score: 0,
+                    timeLeft: 60,
+                    combo: 0,
+                    maxCombo: 0,
+                    wordsTyped: 0,
+                    totalKeystrokes: 0,
+                    correctKeystrokes: 0,
+                    currentInput: '',
+                    words: [],
+                    gameStartTime: null,
+                    isGameActive: false,
+                    isPaused: false
+                };
+                this.tutorialStep = 0;
                 
-                p.fill(255, 200); p.noStroke(); p.textAlign(p.CENTER, p.CENTER);
-                p.textSize(keyboardOverlay.keyHeight * 0.5);
-                p.text(keyChar.toUpperCase(), currentX + keyboardOverlay.keyWidth / 2, currentY + keyboardOverlay.keyHeight / 2);
-                currentX += keyboardOverlay.keyWidth + keyboardOverlay.padding;
+                this.loadSettings();
+                this.loadPlayerData();
             }
-            currentY += keyboardOverlay.keyHeight + keyboardOverlay.padding;
-        }
-    }
 
-    function drawGameScreen() {
-        if (p.millis() - lastSpawnTime > SPAWN_INTERVALS[difficulty]) {
-            let sourceWords = [];
-            if (wordMode === 'katakana') sourceWords = allKatakanaWords;
-            else if (wordMode === 'hiragana') sourceWords = allHiraganaWords;
-            else sourceWords = (p.random() < 0.5 ? allKatakanaWords : allHiraganaWords);
-            if (sourceWords.length > 0) words.push(new Word(p.random(sourceWords)));
-            lastSpawnTime = p.millis();
-        }
-
-        for (let i = words.length - 1; i >= 0; i--) {
-            words[i].update(); words[i].draw();
-            if (!words[i].isActive) words.splice(i, 1);
-        }
-        for (let i = particles.length - 1; i >= 0; i--) {
-            particles[i].update(); particles[i].draw();
-            if (particles[i].isDead()) particles.splice(i, 1);
-        }
-        drawGamePlayUI();
-        drawInputArea();
-        if (isMobile) {
-            if (isFlickInputActive) {
-                drawFlickKeyboard();
-            } else if (isVirtualKeyboardVisible) { // Only draw QWERTY if flick is not active AND it's set to visible
-                drawVirtualKeyboard();
-            }
-        }
-    }
-
-    function drawGamePlayUI() {
-        p.fill(255); p.textAlign(p.LEFT); p.textSize(24);
-        p.text('Score: ' + score, 20, 40);
-
-        if (combo > 1) {
-            let comboSize = p.map(combo, 2, 50, 20, 36, true); 
-            let R = p.map(combo, 2, 50, 255, 255, true); 
-            let G = p.map(combo, 2, 50, 255, 100, true);
-            let B = p.map(combo, 2, 50, 0, 0, true);
-            p.fill(R, G, B); p.textSize(comboSize);
-            p.text('Combo: ' + combo + 'x', 20, 70 + (comboSize > 20 ? (comboSize - 20)/2 : 0) ); 
-        }
-
-        p.fill(255); p.textAlign(p.RIGHT); p.textSize(24);
-        p.text('Time: ' + timeLeft, width - 20 - (gameplayPauseButton ? gameplayPauseButton.w + 10 : 0), 40);
-        if (gameplayPauseButton) gameplayPauseButton.draw();
-
-        p.textAlign(p.CENTER); p.textSize(16); p.fill(255,255,255,180);
-        // Standardized spacing for instruction text
-        const mobileKeyboardHeight = (isMobile && isVirtualKeyboardVisible) ? (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 : 0;
-        const instructionTextY = isMobile ? height - mobileKeyboardHeight - 50 - 20 : keyboardOverlay.startY - 30; // 50 for input area, 20 for padding
-
-        if (!isMobile) {
-             p.text('落下する単語のローマ字を入力！', width / 2, instructionTextY);
-        } else {
-             // On mobile, ensure textYPos is clearly above the input area which is above the virtual keyboard (if visible)
-             const inputAreaHeight = 40; // from drawInputArea
-             const spaceAboveInputArea = 20; // Desired space
-             let calculatedTextYPos = height - mobileKeyboardHeight - inputAreaHeight - spaceAboveInputArea - (p.textSize() / 2);
-             if (mobileKeyboardHeight === 0) { // If virtual keyboard is not visible, position it relative to bottom
-                calculatedTextYPos = height - inputAreaHeight - spaceAboveInputArea - 20; // Extra padding from bottom
-             }
-             p.text('落下する単語のローマ字を入力！', width / 2, calculatedTextYPos);
-        }
-    }
-
-    function drawInputArea() {
-        const inputAreaHeight = 40;
-        let inputAreaY;
-        const inputAreaPadding = 10;
-
-        if (isMobile) {
-            if (isFlickInputActive) {
-                const keyRowsInFlick = 4; // As defined in createFlickKeyboard
-                const yPaddingInFlick = 10; // As defined in createFlickKeyboard
-                // Estimate flick key height (it might vary slightly based on width constraints)
-                const estimatedAvailableHeight = height * 0.4;
-                let flickKeyHeight = (estimatedAvailableHeight - (keyRowsInFlick - 1) * yPaddingInFlick) / keyRowsInFlick;
-                flickKeyHeight = Math.min(flickKeyHeight, (width / (3+1)) * 1.2); // Approximation from createFlickKeyboard logic
-
-                const totalFlickKeyboardH = (keyRowsInFlick * flickKeyHeight) + ((keyRowsInFlick - 1) * yPaddingInFlick);
-                const flickKeyboardActualStartY = height - totalFlickKeyboardH - 10; // 10 is bottom padding
-                inputAreaY = flickKeyboardActualStartY - inputAreaHeight - inputAreaPadding;
-            } else if (isVirtualKeyboardVisible) { // QWERTY visible
-                const qwertyKeySize = Math.min(width / 11, 45);
-                const qwertyPadding = Math.max(2, qwertyKeySize * 0.05);
-                const totalQwertyHeight = (qwertyKeySize + qwertyPadding) * 3 + qwertyKeySize; // 3 rows + spacebar row approximation
-                inputAreaY = height - totalQwertyHeight - inputAreaHeight - inputAreaPadding - 40; // Extra 40 for better spacing
-            } else { // No keyboard visible
-                inputAreaY = height - inputAreaHeight - 20; // Default position near bottom
-            }
-        } else { // Not mobile (PC)
-            inputAreaY = keyboardOverlay.startY - inputAreaHeight - inputAreaPadding;
-        }
-        p.fill(255, 255, 255, 200); p.stroke(100); p.strokeWeight(2);
-        const inputRectWidth = 300;
-        p.rect(width / 2 - inputRectWidth / 2, inputAreaY, inputRectWidth, inputAreaHeight, 10);
-
-        p.textSize(18);
-        let currentX = width / 2 - p.textWidth(currentInput) / 2; // Start drawing from a centered position
-        const centerY = inputAreaY + inputAreaHeight / 2;
-
-        let overallCorrect = true; // Assume correct until a mismatch is found for all words
-        if (currentInput.length > 0) {
-            let anyWordMatchesPrefix = false;
-            for (const word of words) {
-                if (!word.isCleared && word.romaji.startsWith(currentInput)) {
-                    anyWordMatchesPrefix = true;
-                    break;
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('cgTypingSettings');
+                    if (saved) {
+                        this.gameSettings = { ...this.gameSettings, ...JSON.parse(saved) };
+                    }
+                } catch (e) {
+                    console.warn('設定の読み込みに失敗:', e);
                 }
             }
-            overallCorrect = anyWordMatchesPrefix;
+
+            saveSettings() {
+                try {
+                    localStorage.setItem('cgTypingSettings', JSON.stringify(this.gameSettings));
+                } catch (e) {
+                    console.warn('設定の保存に失敗:', e);
+                }
+            }
+
+            loadPlayerData() {
+                try {
+                    const saved = localStorage.getItem('cgTypingPlayerData');
+                    if (saved) {
+                        this.playerData = JSON.parse(saved);
+                    } else {
+                        this.playerData = {
+                            level: 1,
+                            xp: 0,
+                            totalGames: 0,
+                            bestScore: 0,
+                            totalWordsTyped: 0,
+                            totalPlayTime: 0,
+                            recentGames: [],
+                            achievements: []
+                        };
+                    }
+                } catch (e) {
+                    console.warn('プレイヤーデータの読み込みに失敗:', e);
+                    this.playerData = {
+                        level: 1,
+                        xp: 0,
+                        totalGames: 0,
+                        bestScore: 0,
+                        totalWordsTyped: 0,
+                        totalPlayTime: 0,
+                        recentGames: [],
+                        achievements: []
+                    };
+                }
+            }
+
+            savePlayerData() {
+                try {
+                    localStorage.setItem('cgTypingPlayerData', JSON.stringify(this.playerData));
+                } catch (e) {
+                    console.warn('プレイヤーデータの保存に失敗:', e);
+                }
+            }
+
+            getXPForLevel(level) {
+                return level * 100;
+            }
+
+            addXP(amount) {
+                const oldLevel = this.playerData.level;
+                this.playerData.xp += amount;
+                
+                let currentLevelXP = this.getXPForLevel(this.playerData.level);
+                while (this.playerData.xp >= currentLevelXP) {
+                    this.playerData.xp -= currentLevelXP;
+                    this.playerData.level++;
+                    currentLevelXP = this.getXPForLevel(this.playerData.level);
+                }
+                
+                return this.playerData.level > oldLevel;
+            }
+
+            getCurrentLevelProgress() {
+                const currentLevelXP = this.getXPForLevel(this.playerData.level);
+                return (this.playerData.xp / currentLevelXP) * 100;
+            }
+
+            resetGame() {
+                this.gameData = {
+                    score: 0,
+                    timeLeft: GAME_CONFIG.durations[this.gameSettings.difficulty],
+                    combo: 0,
+                    maxCombo: 0,
+                    wordsTyped: 0,
+                    totalKeystrokes: 0,
+                    correctKeystrokes: 0,
+                    currentInput: '',
+                    words: [],
+                    gameStartTime: null,
+                    isGameActive: false,
+                    isPaused: false
+                };
+            }
         }
 
-        for (let i = 0; i < currentInput.length; i++) {
-            const char = currentInput[i];
-            let charIsCorrect = false;
+        // ===== サウンドシステム =====
+        class SoundSystem {
+            constructor() {
+                this.sounds = {};
+                this.enabled = true;
+                this.loadSounds();
+            }
 
-            if (overallCorrect) { // If the whole currentInput is a prefix of at least one word, all chars up to this point are "correct" in that context
-                 charIsCorrect = true;
-            } else {
-                // If currentInput as a whole is not a prefix, check char by char for the first point of deviation
-                // This logic is tricky because a char might be "correct" for one word's prefix but "incorrect" for another.
-                // The simplest visual feedback is to color based on the `overallCorrect` status determined above.
-                // A more granular per-char check against all words could be too complex or visually noisy.
-                // Let's stick to: if the whole string is a valid prefix for *any* word, all typed chars are green.
-                // Otherwise, the point where it deviates (or all if no prefix matches) becomes red.
+            loadSounds() {
+                const soundFiles = {
+                    type: 'sounds/type.mp3',
+                    correct: 'sounds/correct.mp3',
+                    word_complete: 'sounds/word_complete.mp3',
+                    wrong: 'sounds/wrong.mp3',
+                    combo: 'sounds/combo_increase.mp3',
+                    combo_break: 'sounds/combo_break.mp3',
+                    click: 'sounds/click.mp3',
+                    bgm: 'sounds/bgm.mp3'
+                };
 
-                // For simplicity, if overallCorrect is false, we'll mark the character that broke the pattern as red.
-                // This means we need to find the length of the longest common prefix among all words for the current input.
-                let longestMatchLength = 0;
-                for (const word of words) {
-                    if (!word.isCleared) {
-                        let matchLen = 0;
-                        while(matchLen < currentInput.length && matchLen < word.romaji.length && currentInput[matchLen] === word.romaji[matchLen]) {
-                            matchLen++;
-                        }
-                        if (matchLen > longestMatchLength) {
-                            longestMatchLength = matchLen;
-                        }
+                for (const [name, path] of Object.entries(soundFiles)) {
+                    try {
+                        const audio = new Audio(path);
+                        audio.volume = name === 'bgm' ? 0.3 : 0.7;
+                        audio.preload = 'auto';
+                        audio.onerror = () => {
+                            console.warn(`サウンドファイルが見つかりません: ${path}`);
+                            this.sounds[name] = null;
+                        };
+                        this.sounds[name] = audio;
+                    } catch (e) {
+                        console.warn(`サウンドの初期化に失敗: ${name}`, e);
+                        this.sounds[name] = null;
                     }
                 }
-                if (i < longestMatchLength) {
-                    charIsCorrect = true;
+
+                if (this.sounds.bgm) {
+                    this.sounds.bgm.loop = true;
+                }
+            }
+
+            play(soundName, volume = null) {
+                if (!this.enabled || !this.sounds[soundName]) return;
+                
+                try {
+                    const sound = this.sounds[soundName];
+                    if (volume !== null) sound.volume = volume;
+                    sound.currentTime = 0;
+                    sound.play().catch(e => {
+                        console.warn(`サウンド再生エラー (${soundName}):`, e);
+                    });
+                } catch (e) {
+                    console.warn(`サウンド再生エラー (${soundName}):`, e);
+                }
+            }
+
+            playBGM() {
+                if (this.enabled && this.sounds.bgm) {
+                    this.sounds.bgm.play().catch(e => {
+                        console.warn('BGM再生エラー:', e);
+                    });
+                }
+            }
+
+            stopBGM() {
+                if (this.sounds.bgm) {
+                    this.sounds.bgm.pause();
+                    this.sounds.bgm.currentTime = 0;
+                }
+            }
+
+            setEnabled(enabled) {
+                this.enabled = enabled;
+                if (!enabled) {
+                    this.stopBGM();
+                }
+            }
+        }
+
+        // ===== 単語管理クラス =====
+        class Word {
+            constructor(wordData, x, speed) {
+                this.japanese = wordData.japanese;
+                this.romaji = wordData.romaji;
+                this.x = x;
+                this.y = -60;
+                this.speed = speed;
+                this.typedLength = 0;
+                this.isCompleted = false;
+                this.element = this.createElement();
+                this.addToDOM();
+            }
+
+            createElement() {
+                const element = document.createElement('div');
+                element.className = 'absolute bg-white/90 rounded-lg p-3 shadow-lg transform transition-all duration-200';
+                element.style.left = this.x + 'px';
+                element.style.top = this.y + 'px';
+                element.style.minWidth = '120px';
+                element.innerHTML = `
+                    <div class="text-lg font-bold text-gray-800 mb-1">${this.japanese}</div>
+                    <div class="text-sm font-mono">
+                        <span class="typed text-green-600"></span><span class="remaining text-gray-600">${this.romaji}</span>
+                    </div>
+                `;
+                return element;
+            }
+
+            addToDOM() {
+                document.getElementById('wordsContainer').appendChild(this.element);
+            }
+
+            update() {
+                if (this.isCompleted) return false;
+                
+                this.y += this.speed;
+                this.element.style.top = this.y + 'px';
+                
+                // 画面下に到達したかチェック
+                if (this.y > window.innerHeight + 100) {
+                    this.remove();
+                    return false;
+                }
+                
+                return true;
+            }
+
+            updateDisplay() {
+                const typedSpan = this.element.querySelector('.typed');
+                const remainingSpan = this.element.querySelector('.remaining');
+                
+                typedSpan.textContent = this.romaji.substring(0, this.typedLength);
+                remainingSpan.textContent = this.romaji.substring(this.typedLength);
+                
+                // 入力ミスの場合は背景を赤くする
+                if (this.typedLength > 0 && !this.romaji.startsWith(gameState.gameData.currentInput)) {
+                    this.element.classList.add('bg-red-200');
                 } else {
-                    charIsCorrect = false;
+                    this.element.classList.remove('bg-red-200');
                 }
             }
 
-            if (charIsCorrect) {
-                p.fill(0, 150, 0); // Green for correct
-            } else {
-                p.fill(200, 0, 0); // Red for incorrect
-            }
-            p.text(char, currentX, centerY);
-            currentX += p.textWidth(char);
-        }
-    }
-
-    function drawVirtualKeyboard() {
-        for (const key of virtualKeyboard) {
-            p.fill(230, 230, 230, 220); p.stroke(150); p.strokeWeight(1);
-            p.rect(key.x, key.y, key.width, key.height, 5);
-            p.fill(30); p.textAlign(p.CENTER, p.CENTER);
-            p.textSize(Math.min(key.width, key.height) * 0.45);
-            p.text(key.label || key.key.toUpperCase(), key.x + key.width / 2, key.y + key.height / 2);
-        }
-    }
-    function drawMenu() {
-        p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(36, width / 10)); p.text('CGモデリング', width / 2, height / 4 - 50); // Adjusted for spacing
-        p.textSize(Math.min(32, width / 12)); p.text('タイピングゲーム NEO', width / 2, height / 4 -10); // Adjusted for spacing
-        p.textSize(12); p.textAlign(p.RIGHT); p.fill(255, 255, 255, 150);
-        p.text(GAME_VERSION, width - 10, height - 10);
-
-        p.textSize(18);
-        let modeText = wordMode === 'katakana' ? 'カタカナ' : (wordMode === 'hiragana' ? 'ひらがな' : 'ミックス');
-        let diffText = difficulty === 'easy' ? 'かんたん' : (difficulty === 'normal' ? 'ふつう' : (difficulty === 'hard' ? 'むずかしい' : 'チュートリアル'));
-        p.fill(255); p.textAlign(p.CENTER);
-        p.text(`モード: ${modeText} / 難易度: ${diffText}`, width / 2, height / 4 + 30); // Adjusted for spacing
-        for (const button of menuButtons) button.draw();
-    }
-    function drawSettings() {
-        p.fill(255); p.textAlign(p.CENTER, p.TOP);
-        p.textSize(Math.min(32, width/12)); p.text('設定', width / 2, height / 8);
-        const drawSettingButtonWithSelection = (button, isSelected) => button.draw(isSelected);
-        
-        p.fill(255); p.textSize(20); p.textAlign(p.CENTER);
-        if (modeSettingButtons.length > 0) p.text("表示モード", width/2, modeSettingButtons[0].y - 30); // Adjusted offset
-        for (const button of modeSettingButtons) {
-            drawSettingButtonWithSelection(button,
-                (button.text.includes('カタカナ') && wordMode === 'katakana') ||
-                (button.text.includes('ひらがな') && wordMode === 'hiragana') ||
-                (button.text.includes('ミックス') && wordMode === 'mixed')
-            );
-        }
-        if (difficultySettingButtons.length > 0) p.text("難易度", width/2, difficultySettingButtons[0].y - 30); // Adjusted offset
-        for (const button of difficultySettingButtons) {
-            drawSettingButtonWithSelection(button,
-                (button.text === 'かんたん' && difficulty === 'easy') ||
-                (button.text === 'ふつう' && difficulty === 'normal') ||
-                (button.text === 'むずかしい' && difficulty === 'hard')
-            );
-        }
-        for (const button of settingsScreenButtons) button.draw();
-    }
-    function drawPauseScreen() {
-        p.fill(0, 0, 0, 150); p.rect(0, 0, width, height);
-        p.fill(255); p.textAlign(p.CENTER); p.textSize(Math.min(32, width/10));
-        p.text('一時停止中', width / 2, height / 3);
-        for (const button of pauseMenuButtons) button.draw();
-    }
-    function calculatePerformanceMetrics() {
-        const gameDurationPlayed = GAME_DURATIONS[difficulty] - (gameState === GAME_STATES.RESULTS ? 0 : timeLeft);
-        const gameDurationMinutes = Math.max(1, gameDurationPlayed) / 60; 
-
-        if (gameDurationMinutes <= 0) return { wpm: 0, cpm: 0, accuracy: 0 };
-        const wpm = gameStats.correctCharsTyped > 0 ? Math.round((gameStats.correctCharsTyped / 5) / gameDurationMinutes) : 0;
-        const cpm = gameStats.correctCharsTyped > 0 ? Math.round(gameStats.correctCharsTyped / gameDurationMinutes) : 0;
-        const accuracy = gameStats.totalKeystrokes > 0 ? Math.round((gameStats.correctKeystrokes / gameStats.totalKeystrokes) * 100) : (gameStats.wordsTyped > 0 ? 100 : 0);
-        return { wpm, cpm, accuracy };
-    }
-    function drawResultsScreen() {
-        p.fill(0, 0, 0, 180); p.rect(0, 0, width, height);
-        p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(32, width/10)); p.text('結果発表', width / 2, height / 5);
-        const metrics = calculatePerformanceMetrics();
-        const isNewHighScore = (difficulty !== 'tutorial' && score > (highScores[difficulty] || 0));
-
-        p.textSize(Math.min(24, width/15)); let yPos = height / 5 + 60;
-        p.text('スコア: ' + score, width / 2, yPos); yPos += 40;
-        p.textSize(Math.min(20, width/18));
-        p.text('入力した単語数: ' + gameStats.wordsTyped, width / 2, yPos); yPos += 30;
-        p.text('最大コンボ: ' + maxCombo, width / 2, yPos); yPos += 30;
-        p.text('WPM (単語/分): ' + metrics.wpm, width / 2, yPos); yPos += 30;
-        p.text('CPM (文字/分): ' + metrics.cpm, width / 2, yPos); yPos += 30;
-        p.text('正確さ: ' + metrics.accuracy + '%', width / 2, yPos); yPos += 40;
-        if (isNewHighScore && difficulty !== 'tutorial') {
-            p.fill(255, 255, 0); p.textSize(Math.min(28, width/12));
-            p.text('新記録達成!', width / 2, yPos);
-        }
-        const buttonWidth = Math.min(250, width - 60); const buttonHeight = Math.min(50, height/12);
-        const resultsRetryButton = new Button(width/2 - buttonWidth/2, height * 0.75, buttonWidth, buttonHeight, 'もう一度プレイ', () => { p.loop(); retryGame(); });
-        const resultsMenuButton = new Button(width/2 - buttonWidth/2, height * 0.75 + buttonHeight + 15, buttonWidth, buttonHeight, 'メニューに戻る', () => { p.loop(); returnToMenu(); });
-        resultsRetryButton.draw(); resultsMenuButton.draw();
-    }
-    function drawHighScores() {
-        p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(32, width/10)); p.text('ハイスコア', width / 2, height / 4);
-        p.textSize(Math.min(24, width/15));
-        p.text('かんたん: ' + (highScores.easy || 0), width / 2, height / 4 + 70);
-        p.text('ふつう: ' + (highScores.normal || 0), width / 2, height / 4 + 110);
-        p.text('むずかしい: ' + (highScores.hard || 0), width / 2, height / 4 + 150);
-        const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-        const backButtonY = height / 4 + 150 + buttonHeight + 20; // Position relative to last text
-        const backButton = new Button(width/2 - buttonWidth/2, backButtonY, buttonWidth, buttonHeight, 'もどる', () => { gameState = GAME_STATES.MENU; });
-        backButton.draw();
-    }
-    function drawTutorialScreen() {
-        // Call drawGameScreen elements for background consistency, but overlay tutorial content
-        if (difficulty === 'tutorial') {
-             // Simplified drawGameScreen content for tutorial background
-            if (p.millis() - lastSpawnTime > SPAWN_INTERVALS[difficulty]) { /* ... word spawning ... */ }
-            for (let i = words.length - 1; i >= 0; i--) { words[i].update(); words[i].draw(); if (!words[i].isActive) words.splice(i, 1); }
-            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].isDead()) particles.splice(i, 1); }
-            drawGamePlayUI(); // Draw score, time, etc.
-            drawInputArea();  // Draw input area
-            if (isMobile) { // Keyboard logic for tutorial screen
-                if (isFlickInputActive) {
-                    drawFlickKeyboard();
-                } else if (isVirtualKeyboardVisible) {
-                    drawVirtualKeyboard();
-                }
-            }
-        }
-        p.fill(0,0,0,190); p.rect(0,0,width,height); // Tutorial overlay
-
-        p.fill(255); p.textAlign(p.CENTER);
-        p.textSize(Math.min(28, width/12)); p.text('チュートリアル', width / 2, height / 5); // Adjusted Y for title
-        p.textSize(Math.min(18, width / 23));
-        let tutorialText = [];
-        let textBlockYStart = height / 5 + 70; // Start Y for the text block, give more space after title
-        let lineHeight = 30; // Reduced line height for potentially more text
-
-        if (tutorialStep === 0) {
-            tutorialText = [
-                'タイピングゲームNEOへようこそ！',
-                '画面上から落ちてくる単語のローマ字を正確に入力します。',
-                '例:「ポリゴン」→「porigon」。',
-                '画面下のキーボードが光って補助します(PC)。',
-                '（このチュートリアル中はカタカナ・かんたん設定です）'
-            ];
-        } else if (tutorialStep === 1) {
-            tutorialText = [
-                '正確な入力でスコア獲得。連続成功でコンボボーナス！',
-                'タイプミスや単語を見逃すとコンボが途切れます。',
-                '単語を完成させると効果音と共にエフェクトが発生します。',
-                '制限時間内にハイスコアを目指しましょう！'
-            ];
-        } else if (tutorialStep === 2) {
-             tutorialText = [
-                '設定で難易度や表示モード(カタカナ/ひらがな/ミックス)を変更可能。',
-                'サウンドのオン/オフも設定できます。(効果音ファイル要)',
-                '準備ができたらメインメニューからスタート！健闘を祈ります！'
-            ];
-        } else { returnToMenu(); return; }
-
-        for(let i=0; i < tutorialText.length; i++) p.text(tutorialText[i], width / 2, textBlockYStart + i * lineHeight);
-
-        const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-        const nextButtonY = textBlockYStart + tutorialText.length * lineHeight + 35; // Position below text block with a bit more padding
-        const nextButtonText = tutorialStep < 2 ? '次へ' : 'メニューへ';
-        const tutorialNextButton = new Button(width/2 - buttonWidth/2, nextButtonY, buttonWidth, buttonHeight, nextButtonText, () => {
-            if (tutorialStep < 2) {
-                tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = []; }
-            } else returnToMenu();
-        });
-        tutorialNextButton.draw();
-    }
-
-    function checkWordMatch() {
-        let wordMatchedThisFrame = null;
-        for (let i = words.length - 1; i >= 0; i--) {
-            if (words[i].isFullyTypedBy(currentInput)) {
-                wordMatchedThisFrame = words[i];
-                score += wordMatchedThisFrame.romaji.length * 10 * (Math.max(1, combo));
-                gameStats.correctCharsTyped += wordMatchedThisFrame.romaji.length;
-                
-                const particleCount = p.random(25, 40);
-                const wordCenterX = wordMatchedThisFrame.x + p.textWidth(wordMatchedThisFrame.japanese) / 2;
-                for (let j = 0; j < particleCount; j++) {
-                    particles.push(new Particle(wordCenterX, wordMatchedThisFrame.y, p.color(p.random(200,255),p.random(150,255),50) ));
-                }
-                triggerScreenShake(12, 4); 
-                playSound(sounds.word_complete || sounds.correct); 
-                
-                gameStats.wordsTyped++; combo++;
-                if (combo > maxCombo) maxCombo = combo;
-                if (combo > 0 && combo % 5 === 0) playSound(sounds.combo_increase);
-
-                wordMatchedThisFrame.markCleared(); 
-                if (difficulty === 'hard') timeLeft = Math.min(timeLeft + 1, GAME_DURATIONS.hard + 5);
-                currentInput = '';
-                break; 
-            }
-        }
-        for (const word of words) word.updateStateFromInput(currentInput);
-    }
-
-    function checkAndSaveHighScore() {
-        if (difficulty === 'tutorial') return false;
-        let isNewRecord = false;
-        if (score > (highScores[difficulty] || 0) ) {
-            highScores[difficulty] = score; isNewRecord = true;
-            try { localStorage.setItem('cgTypingHighScores_NEO', JSON.stringify(highScores)); }
-            catch (e) { console.error("Error saving high scores:", e); }
-        }
-        return isNewRecord;
-    }
-
-    function handleTypingInput(key) {
-        playSound(sounds.type);
-        currentInput += key.toLowerCase();
-        keyboardOverlay.keyStates[key.toLowerCase()] = keyboardOverlay.highlightDuration; 
-
-        gameStats.totalKeystrokes++; gameStats.totalCharsTyped++;
-        let isCorrectPrefixForAnyWord = false;
-        for (const word of words) {
-            if (!word.isCleared && word.romaji.startsWith(currentInput)) {
-                isCorrectPrefixForAnyWord = true; break;
-            }
-        }
-
-        if (isCorrectPrefixForAnyWord) gameStats.correctKeystrokes++;
-        else {
-            if (currentInput.length > 0) {
-                if (combo > 0) playSound(sounds.combo_break); 
-                combo = 0; playSound(sounds.wrong);
-            }
-        }
-        checkWordMatch();
-    }
-
-    p.keyPressed = function() {
-        if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL) {
-            if (p.keyCode === p.ESCAPE) { pauseGame(); return false; }
-            if (!isMobile) {
-                if (p.keyCode === p.BACKSPACE) {
-                    currentInput = currentInput.slice(0, -1);
-                    for (const word of words) word.updateStateFromInput(currentInput);
-                } else if (p.key.length === 1 && p.key.match(/^[a-z0-9]$/i)) {
-                    handleTypingInput(p.key);
+            checkInput(input) {
+                if (this.romaji.startsWith(input)) {
+                    this.typedLength = input.length;
+                    this.updateDisplay();
+                    
+                    if (input === this.romaji) {
+                        this.complete();
+                        return true;
+                    }
                 }
                 return false;
             }
-        } else if (gameState === GAME_STATES.PAUSED) {
-            if (p.keyCode === p.ESCAPE) { resumeGame(); return false; }
-        }
-        return true;
-    };
 
-    p.mousePressed = function() {
-        const mouseX = p.mouseX; const mouseY = p.mouseY;
-        let buttonClickedSoundPlayed = false;
+            complete() {
+                this.isCompleted = true;
+                this.element.classList.add('animate-pulse', 'bg-green-200');
+                
+                // パーティクルエフェクト
+                this.createParticles();
+                
+                // 少し遅れて削除
+                setTimeout(() => this.remove(), 300);
+            }
 
-        const generalButtonClick = () => {
-            if (!buttonClickedSoundPlayed) { playSound(sounds.click); buttonClickedSoundPlayed = true; }
-        };
+            createParticles() {
+                const rect = this.element.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                for (let i = 0; i < 10; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle w-2 h-2 bg-yellow-400 rounded-full';
+                    particle.style.left = centerX + 'px';
+                    particle.style.top = centerY + 'px';
+                    particle.style.setProperty('--dx', (Math.random() - 0.5) * 200 + 'px');
+                    particle.style.setProperty('--dy', (Math.random() - 0.5) * 200 + 'px');
+                    
+                    document.getElementById('particlesContainer').appendChild(particle);
+                    
+                    setTimeout(() => particle.remove(), 1000);
+                }
+            }
 
-        // Priority handling for flick input if active
-        if (isMobile && isFlickInputActive && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-            for (const keyObj of flickKeyboardLayout) {
-                if (mouseX >= keyObj.x && mouseX <= keyObj.x + keyObj.w && mouseY >= keyObj.y && mouseY <= keyObj.y + keyObj.h) {
-                    touchState.startX = mouseX;
-                    touchState.startY = mouseY;
-                    touchState.currentKey = keyObj;
-                    touchState.isFlicking = true; // Tentatively start flicking
-                    if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL)) p.loop(); // Ensure draw updates for feedback if paused
-                    return false; // Consume this press
+            remove() {
+                if (this.element && this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
                 }
             }
         }
 
-        if (gameState === GAME_STATES.MENU) {
-            for (const button of menuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
-        } else if (gameState === GAME_STATES.SETTINGS) {
-            for (const button of modeSettingButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
-            for (const button of difficultySettingButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
-            for (const button of settingsScreenButtons) {
-                if (button.isClicked(mouseX, mouseY)) {
-                    generalButtonClick(); 
-                    if (button instanceof ToggleButton) button.toggle(); else button.action();
-                    return false;
-                }
-            }
-        } else if (gameState === GAME_STATES.HIGHSCORES) {
-            const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-            const backButtonY = height / 4 + 150 + buttonHeight + 20; // from drawHighScores
-            const backButtonRect = { x: width/2 - buttonWidth/2, y: backButtonY, w: buttonWidth, h: buttonHeight};
-            if (mouseX >= backButtonRect.x && mouseX <= backButtonRect.x + backButtonRect.w && mouseY >= backButtonRect.y && mouseY <= backButtonRect.y + backButtonRect.h) {
-                generalButtonClick(); gameState = GAME_STATES.MENU; return false;
-            }
-        } else if (gameState === GAME_STATES.TUTORIAL) {
-            if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
-
-            // Check tutorial's own next button first if not currently flicking
-            if (!touchState.isFlicking) {
-                const buttonWidth = Math.min(200, width - 40); const buttonHeight = Math.min(50, height/12);
-                const textBlockYStart = height / 5 + 70; const lineHeight = 30;
-                let tutorialTextLength = 0;
-                if (tutorialStep === 0) tutorialTextLength = 5;
-                else if (tutorialStep === 1) tutorialTextLength = 4;
-                else tutorialTextLength = 3;
-                const nextButtonY = textBlockYStart + tutorialTextLength * lineHeight + 35;
-                const nextButtonRect = {x: width/2 - buttonWidth/2, y: nextButtonY, w: buttonWidth, h: buttonHeight};
-
-                if (mouseX >= nextButtonRect.x && mouseX <= nextButtonRect.x + nextButtonRect.w && mouseY >= nextButtonRect.y && mouseY <= nextButtonRect.y + nextButtonRect.h) {
-                    generalButtonClick();
-                    if (tutorialStep < 2) { tutorialStep++; if (difficulty === 'tutorial') { words = []; currentInput = ''; particles = [];}} else returnToMenu();
-                    return false;
-                }
-            }
-             // If not flicking on a key, or if flick is not active, allow other game touch (like input area)
-            if (!isFlickInputActive || !touchState.currentKey) { // if flick is active, currentKey would be set if a flick key was pressed
-                 if (handleMobileGameTouch(mouseX, mouseY) === false) return false;
+        // ===== メインゲームクラス =====
+        class TypingGame {
+            constructor() {
+                this.gameState = new GameState();
+                this.soundSystem = new SoundSystem();
+                this.wordSpawnTimer = null;
+                this.gameTimer = null;
+                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                this.init();
             }
 
-        } else if (gameState === GAME_STATES.PLAYING) {
-            if (gameplayPauseButton && gameplayPauseButton.isClicked(mouseX, mouseY)) { generalButtonClick(); pauseGame(); return false; }
-            if (!isFlickInputActive || !touchState.currentKey) {
-                if (handleMobileGameTouch(mouseX, mouseY) === false) return false;
+            init() {
+                this.setupEventListeners();
+                this.createKeyboards();
+                this.updateUI();
+                this.showScreen('menu');
+                
+                // 設定を音響システムに適用
+                this.soundSystem.setEnabled(this.gameState.gameSettings.soundEnabled);
             }
 
-        } else if (gameState === GAME_STATES.PAUSED) {
-            for (const button of pauseMenuButtons) if (button.isClicked(mouseX, mouseY)) { generalButtonClick(); button.action(); return false; }
-        } else if (gameState === GAME_STATES.RESULTS) {
-            p.loop(); 
-            const buttonWidth = Math.min(250, width - 60); const buttonHeight = Math.min(50, height/12);
-            const playAgainButtonRect = {x: width/2 - buttonWidth/2, y: height * 0.75, w: buttonWidth, h: buttonHeight};
-            const menuButtonRect = {x: width/2 - buttonWidth/2, y: height * 0.75 + buttonHeight + 15, w: buttonWidth, h: buttonHeight};
-            if (mouseX >= playAgainButtonRect.x && mouseX <= playAgainButtonRect.x + playAgainButtonRect.w && mouseY >= playAgainButtonRect.y && mouseY <= playAgainButtonRect.y + playAgainButtonRect.h) {
-                generalButtonClick(); retryGame(); return false;
-            }
-            if (mouseX >= menuButtonRect.x && mouseX <= menuButtonRect.x + menuButtonRect.w && mouseY >= menuButtonRect.y && mouseY <= menuButtonRect.y + menuButtonRect.h) {
-                generalButtonClick(); returnToMenu(); return false;
-            }
-        }
-
-        // If flicking was started, ensure it's handled by mouseReleased, not other UI elements.
-        if (touchState.isFlicking && touchState.currentKey) return false;
-
-        return true; // Default: pass click through
-    };
-
-    p.mouseDragged = function() {
-        if (isMobile && isFlickInputActive && touchState.isFlicking && touchState.currentKey) {
-            // Minimal visual update on drag, actual character selection on release
-            if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL)) p.loop();
-            return false; // Consume drag event
-        }
-        return true;
-    };
-
-    p.mouseReleased = function() {
-        if (isMobile && isFlickInputActive && touchState.isFlicking && touchState.currentKey) {
-            const dx = p.mouseX - touchState.startX;
-            const dy = p.mouseY - touchState.startY;
-            const flickThreshold = 20; // Min distance to be considered a flick
-            let selectedKana = touchState.currentKey.flicks.center; // Default to center (tap)
-
-            if (Math.abs(dx) > flickThreshold || Math.abs(dy) > flickThreshold) { // It's a flick
-                if (Math.abs(dx) > Math.abs(dy)) { // Horizontal flick
-                    if (dx > 0 && touchState.currentKey.flicks.right) selectedKana = touchState.currentKey.flicks.right;
-                    else if (dx < 0 && touchState.currentKey.flicks.left) selectedKana = touchState.currentKey.flicks.left;
-                } else { // Vertical flick
-                    if (dy < 0 && touchState.currentKey.flicks.up) selectedKana = touchState.currentKey.flicks.up; // p5.js Y is inverted from typical UI
-                    else if (dy > 0 && touchState.currentKey.flicks.down) selectedKana = touchState.currentKey.flicks.down;
-                }
-            }
-
-            // console.log("Selected Kana for " + touchState.currentKey.label + ": ", selectedKana, "Key ID:", touchState.currentKey.id);
-
-            let romajiToInput = "";
-            let directAction = false;
-
-            if (touchState.currentKey.id === 'backspace' || selectedKana === 'backspace') { // Ensure consistency
-                currentInput = currentInput.slice(0, -1);
-                directAction = true;
-            } else if (touchState.currentKey.id === 'clear' || selectedKana === 'clear') {
-                currentInput = '';
-                if (combo > 0) playSound(sounds.combo_break); combo = 0;
-                directAction = true;
-            } else if (touchState.currentKey.id === 'toggle_qwerty' || selectedKana === 'toggle_qwerty') {
-                isFlickInputActive = false;
-                isVirtualKeyboardVisible = true; // Show QWERTY
-                directAction = true;
-                playSound(sounds.click);
-            } else if (selectedKana) {
-                // For '゛゜' and '小' keys, the selectedKana is already the character like '゛', 'っ', 'ゃ'
-                // These will be converted by convertKanaToRomaji to placeholders or specific romaji.
-                romajiToInput = convertKanaToRomaji(selectedKana);
+            setupEventListeners() {
+                // メニューボタン
+                document.getElementById('startGame').addEventListener('click', () => this.startGame());
+                document.getElementById('tutorialBtn').addEventListener('click', () => this.showTutorial());
+                document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
+                document.getElementById('statisticsBtn').addEventListener('click', () => this.showStatistics());
+                
+                // 設定画面
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.changeMode(btn.dataset.mode));
+                });
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.addEventListener('click', () => this.changeDifficulty(btn.dataset.difficulty));
+                });
+                document.getElementById('soundToggle').addEventListener('change', (e) => {
+                    this.gameState.gameSettings.soundEnabled = e.target.checked;
+                    this.soundSystem.setEnabled(e.target.checked);
+                    this.gameState.saveSettings();
+                });
+                document.getElementById('backToMenu').addEventListener('click', () => this.showScreen('menu'));
+                
+                // ゲーム画面
+                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseGame());
+                document.getElementById('toggleInput').addEventListener('click', () => this.toggleInputMode());
+                
+                // ポーズ画面
+                document.getElementById('resumeGame').addEventListener('click', () => this.resumeGame());
+                document.getElementById('restartGame').addEventListener('click', () => this.restartGame());
+                document.getElementById('quitGame').addEventListener('click', () => this.quitGame());
+                
+                // 結果画面
+                document.getElementById('playAgain').addEventListener('click', () => this.startGame());
+                document.getElementById('backToMenuFromResults').addEventListener('click', () => this.showScreen('menu'));
+                
+                // 統計画面
+                document.getElementById('backToMenuFromStats').addEventListener('click', () => this.showScreen('menu'));
+                
+                // チュートリアル
+                document.getElementById('tutorialPrev').addEventListener('click', () => this.prevTutorialStep());
+                document.getElementById('tutorialNext').addEventListener('click', () => this.nextTutorialStep());
+                
+                // キーボード入力
+                document.addEventListener('keydown', (e) => this.handleKeyInput(e));
+                
+                // リサイズ対応
+                window.addEventListener('resize', () => this.handleResize());
             }
 
-            if (!directAction && romajiToInput) {
-                currentInput += romajiToInput;
-                playSound(sounds.type);
-                gameStats.totalKeystrokes++; // Approximating one flick/tap as one keystroke
-                gameStats.totalCharsTyped += romajiToInput.length;
-
-                let isCorrectPrefixForAnyWord = false;
-                for (const word of words) {
-                    if (!word.isCleared && word.romaji.startsWith(currentInput)) {
-                        isCorrectPrefixForAnyWord = true; break;
-                    }
-                }
-                if (isCorrectPrefixForAnyWord) {
-                    gameStats.correctKeystrokes += romajiToInput.length; // Count all chars in correct segment
-                } else {
-                    // Check if the input was incorrect *before* this romajiToInput was added.
-                    // Only penalize (break combo, play_wrong_sound) if the currentInput *without* romajiToInput
-                    // was a valid prefix for at least one word, or if it was empty.
-                    const previousInput = currentInput.substring(0, currentInput.length - romajiToInput.length);
-                    let wasPreviouslyCorrectOrEmpty = previousInput.length === 0;
-                    if (previousInput.length > 0) {
-                        for (const word of words) {
-                            if (!word.isCleared && word.romaji.startsWith(previousInput)) {
-                                wasPreviouslyCorrectOrEmpty = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (wasPreviouslyCorrectOrEmpty) {
-                        if (combo > 0) playSound(sounds.combo_break);
-                        combo = 0;
-                        playSound(sounds.wrong);
-                    }
-                }
-                checkWordMatch();
+            createKeyboards() {
+                this.createQWERTYKeyboard();
+                this.createFlickKeyboard();
             }
 
-            // Update all word states regardless of direct action or romaji input
-            for (const word of words) word.updateStateFromInput(currentInput);
-
-            touchState.isFlicking = false;
-            touchState.currentKey = null;
-            if (gameState === GAME_STATES.PAUSED || (gameState !== GAME_STATES.PLAYING && gameState !== GAME_STATES.TUTORIAL) ) p.noLoop();
-            return false; // Consume release event
-        }
-        // Reset if flick was not completed or not active
-        touchState.isFlicking = false;
-        touchState.currentKey = null;
-        return true;
-    };
-
-    function handleMobileGameTouch(touchX, touchY) {
-        if (isMobile && (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.TUTORIAL)) {
-            // Input area touch - only toggle QWERTY visibility if flick is NOT active
-            const inputAreaHeight = 40;
-            let inputAreaY;
-            if (isFlickInputActive) { // Flick keyboard is typically taller
-                 inputAreaY = height - (Math.min(height / 9, 80) * 4 + (Math.min(width / 5, 80) * 0.15 * 3)) - inputAreaHeight - 20; // Approx flick keyboard height
-            } else if (isVirtualKeyboardVisible) { // QWERTY visible
-                 inputAreaY = height - (Math.min(width / 11, 45) + Math.max(2, (Math.min(width / 11, 45)) * 0.05)) * 4.5 - inputAreaHeight - 10;
-            } else { // No keyboard visible
-                 inputAreaY = height - inputAreaHeight - 20;
-            }
-            const inputAreaRect = { x: width / 2 - 150, y: inputAreaY, w: 300, h: inputAreaHeight };
-
-            if (touchX >= inputAreaRect.x && touchX <= inputAreaRect.x + inputAreaRect.w && touchY >= inputAreaRect.y && touchY <= inputAreaRect.y + inputAreaRect.h) {
-                if (!isFlickInputActive) { // Only toggle QWERTY if flick is not active
-                    isVirtualKeyboardVisible = !isVirtualKeyboardVisible;
-                }
-                playSound(sounds.click); return false;
-            }
-
-            if (isFlickInputActive) {
-                // Flick keyboard touch handling (initial structure)
-                // This will be handled by p.mousePressed, p.mouseDragged, p.mouseReleased sections for flick
-            } else if (isVirtualKeyboardVisible) { // QWERTY keyboard touch
-                for (const key of virtualKeyboard) {
-                    if (touchX >= key.x && touchX <= key.x + key.width && touchY >= key.y && touchY <= key.y + key.height) {
-                        if (key.key === 'backspace') {
-                            currentInput = currentInput.slice(0, -1);
-                            for (const word of words) { word.updateStateFromInput(currentInput); }
-                        } else if (key.key === 'clear') {
-                            currentInput = ''; if (combo > 0) playSound(sounds.combo_break); combo = 0;
-                            for (const word of words) { word.updateStateFromInput(currentInput); }
-                        } else if (key.key === 'toggle_flick') {
-                            isFlickInputActive = true;
-                            isVirtualKeyboardVisible = false;
-                            if (flickKeyboardLayout.length === 0) createFlickKeyboard();
-                            playSound(sounds.click);
+            createQWERTYKeyboard() {
+                const container = document.getElementById('qwertyKeyboard');
+                const keys = [
+                    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+                    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '←'],
+                    ['z', 'x', 'c', 'v', 'b', 'n', 'm', '消去']
+                ];
+                
+                container.innerHTML = '';
+                
+                keys.forEach((row, rowIndex) => {
+                    row.forEach(key => {
+                        const button = document.createElement('button');
+                        button.textContent = key.toUpperCase();
+                        button.className = 'bg-white/80 hover:bg-white text-gray-800 font-semibold py-2 px-1 rounded transition-all transform active:scale-95';
+                        
+                        if (key === '←') {
+                            button.className += ' col-span-1';
+                            button.addEventListener('click', () => this.handleBackspace());
+                        } else if (key === '消去') {
+                            button.className += ' col-span-2';
+                            button.addEventListener('click', () => this.handleClear());
                         } else {
-                            handleTypingInput(key.key); 
+                            button.addEventListener('click', () => this.handleCharInput(key));
                         }
-                        return false; // Handled QWERTY key press
+                        
+                        container.appendChild(button);
+                    });
+                });
+            }
+
+            createFlickKeyboard() {
+                const container = document.getElementById('flickKeyboard');
+                const flickKeys = [
+                    { main: 'あ', flicks: ['い', 'う', 'え', 'お'] },
+                    { main: 'か', flicks: ['き', 'く', 'け', 'こ'] },
+                    { main: 'さ', flicks: ['し', 'す', 'せ', 'そ'] },
+                    { main: 'た', flicks: ['ち', 'つ', 'て', 'と'] },
+                    { main: 'な', flicks: ['に', 'ぬ', 'ね', 'の'] },
+                    { main: 'は', flicks: ['ひ', 'ふ', 'へ', 'ほ'] },
+                    { main: 'ま', flicks: ['み', 'む', 'め', 'も'] },
+                    { main: 'や', flicks: ['ゆ', 'よ'] },
+                    { main: 'ら', flicks: ['り', 'る', 'れ', 'ろ'] },
+                    { main: 'わ', flicks: ['を', 'ん'] },
+                    { main: '←', type: 'backspace' },
+                    { main: '消去', type: 'clear' },
+                    { main: '゛゜', flicks: ['が', 'ぱ'] },
+                    { main: 'ー', type: 'dash' },
+                    { main: 'ABC', type: 'toggle' }
+                ];
+                
+                container.innerHTML = '';
+                
+                flickKeys.forEach(keyData => {
+                    const button = document.createElement('button');
+                    button.className = 'flick-key bg-white/80 hover:bg-white text-gray-800 font-semibold py-3 px-2 rounded-lg transition-all relative';
+                    button.innerHTML = `
+                        <div class="text-lg">${keyData.main}</div>
+                        ${keyData.flicks ? `
+                            <div class="flick-hints">
+                                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[1] || ''}</div>
+                                <div class="absolute top-1/2 -left-6 transform -translate-y-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[0] || ''}</div>
+                                <div class="absolute top-1/2 -right-6 transform -translate-y-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[2] || ''}</div>
+                                <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs bg-blue-500 text-white px-1 rounded">${keyData.flicks[3] || ''}</div>
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    // タッチイベントの処理
+                    if (keyData.type === 'backspace') {
+                        button.addEventListener('click', () => this.handleBackspace());
+                    } else if (keyData.type === 'clear') {
+                        button.addEventListener('click', () => this.handleClear());
+                    } else if (keyData.type === 'toggle') {
+                        button.addEventListener('click', () => this.toggleInputMode());
+                    } else if (keyData.type === 'dash') {
+                        button.addEventListener('click', () => this.handleKanaInput('ー'));
+                    } else {
+                        button.addEventListener('click', () => this.handleKanaInput(keyData.main));
+                        
+                        // フリック対応（簡易版）
+                        if (keyData.flicks) {
+                            let startY = 0;
+                            button.addEventListener('touchstart', (e) => {
+                                startY = e.touches[0].clientY;
+                            });
+                            button.addEventListener('touchend', (e) => {
+                                const endY = e.changedTouches[0].clientY;
+                                const deltaY = startY - endY;
+                                if (Math.abs(deltaY) > 20) {
+                                    if (deltaY > 0 && keyData.flicks[1]) {
+                                        this.handleKanaInput(keyData.flicks[1]);
+                                    } else if (deltaY < 0 && keyData.flicks[3]) {
+                                        this.handleKanaInput(keyData.flicks[3]);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    container.appendChild(button);
+                });
+            }
+
+            handleKeyInput(e) {
+                if (this.gameState.currentScreen !== 'game' || !this.gameState.gameData.isGameActive) return;
+                
+                e.preventDefault();
+                
+                if (e.key === 'Escape') {
+                    this.pauseGame();
+                } else if (e.key === 'Backspace') {
+                    this.handleBackspace();
+                } else if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+                    this.handleCharInput(e.key.toLowerCase());
+                }
+            }
+
+            handleCharInput(char) {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                this.gameState.gameData.currentInput += char;
+                this.gameState.gameData.totalKeystrokes++;
+                
+                this.soundSystem.play('type');
+                this.updateInput();
+                this.checkWordMatches();
+            }
+
+            handleKanaInput(kana) {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                const romaji = kanaToRomaji[kana];
+                if (romaji) {
+                    this.gameState.gameData.currentInput += romaji;
+                    this.gameState.gameData.totalKeystrokes++;
+                    
+                    this.soundSystem.play('type');
+                    this.updateInput();
+                    this.checkWordMatches();
+                }
+            }
+
+            handleBackspace() {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                if (this.gameState.gameData.currentInput.length > 0) {
+                    this.gameState.gameData.currentInput = this.gameState.gameData.currentInput.slice(0, -1);
+                    this.updateInput();
+                    this.updateWordDisplays();
+                }
+            }
+
+            handleClear() {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                this.gameState.gameData.currentInput = '';
+                this.gameState.gameData.combo = 0;
+                this.updateInput();
+                this.updateWordDisplays();
+                this.soundSystem.play('combo_break');
+            }
+
+            checkWordMatches() {
+                const input = this.gameState.gameData.currentInput;
+                let wordCompleted = false;
+                
+                for (let i = this.gameState.gameData.words.length - 1; i >= 0; i--) {
+                    const word = this.gameState.gameData.words[i];
+                    if (word.checkInput(input)) {
+                        // 単語完成
+                        this.completeWord(word, i);
+                        wordCompleted = true;
+                        break;
+                    }
+                }
+                
+                if (!wordCompleted) {
+                    // 入力が正しいかチェック
+                    let isValidInput = false;
+                    for (const word of this.gameState.gameData.words) {
+                        if (word.romaji.startsWith(input)) {
+                            isValidInput = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!isValidInput && input.length > 0) {
+                        // 間違った入力
+                        this.gameState.gameData.combo = 0;
+                        this.soundSystem.play('wrong');
+                        this.triggerScreenShake();
+                    } else if (isValidInput) {
+                        this.gameState.gameData.correctKeystrokes++;
+                    }
+                }
+                
+                this.updateWordDisplays();
+                this.updateUI();
+            }
+
+            completeWord(word, index) {
+                const wordLength = word.romaji.length;
+                const points = wordLength * 10 * Math.max(1, this.gameState.gameData.combo);
+                
+                this.gameState.gameData.score += points;
+                this.gameState.gameData.combo++;
+                this.gameState.gameData.wordsTyped++;
+                this.gameState.gameData.correctKeystrokes += wordLength;
+                this.gameState.gameData.currentInput = '';
+                
+                if (this.gameState.gameData.combo > this.gameState.gameData.maxCombo) {
+                    this.gameState.gameData.maxCombo = this.gameState.gameData.combo;
+                }
+                
+                // コンボエフェクト
+                if (this.gameState.gameData.combo % 5 === 0) {
+                    this.soundSystem.play('combo');
+                    this.triggerComboEffect();
+                } else {
+                    this.soundSystem.play('word_complete');
+                }
+                
+                // 単語を配列から削除
+                this.gameState.gameData.words.splice(index, 1);
+                
+                this.updateUI();
+            }
+
+            triggerComboEffect() {
+                const comboElement = document.getElementById('combo');
+                comboElement.classList.add('combo-pulse');
+                setTimeout(() => comboElement.classList.remove('combo-pulse'), 300);
+            }
+
+            triggerScreenShake() {
+                document.getElementById('gameContainer').classList.add('screen-shake');
+                setTimeout(() => {
+                    document.getElementById('gameContainer').classList.remove('screen-shake');
+                }, 300);
+            }
+
+            updateWordDisplays() {
+                this.gameState.gameData.words.forEach(word => {
+                    word.updateDisplay();
+                });
+            }
+
+            updateInput() {
+                const inputElement = document.getElementById('currentInput');
+                const input = this.gameState.gameData.currentInput;
+                
+                // 入力の色分け表示
+                let displayHTML = '';
+                let isValidPrefix = false;
+                
+                for (const word of this.gameState.gameData.words) {
+                    if (word.romaji.startsWith(input)) {
+                        isValidPrefix = true;
+                        break;
+                    }
+                }
+                
+                if (input.length === 0) {
+                    displayHTML = '<span class="text-gray-400">入力待ち...</span>';
+                } else if (isValidPrefix) {
+                    displayHTML = `<span class="text-green-400">${input}</span>`;
+                } else {
+                    displayHTML = `<span class="text-red-400">${input}</span>`;
+                }
+                
+                inputElement.innerHTML = displayHTML;
+            }
+
+            spawnWord() {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                const words = this.getCurrentWordList();
+                const randomWord = words[Math.floor(Math.random() * words.length)];
+                const x = Math.random() * (window.innerWidth - 200) + 50;
+                const speed = GAME_CONFIG.fallSpeeds[this.gameState.gameSettings.difficulty];
+                
+                const word = new Word(randomWord, x, speed);
+                this.gameState.gameData.words.push(word);
+            }
+
+            getCurrentWordList() {
+                const mode = this.gameState.gameSettings.mode;
+                if (mode === 'mixed') {
+                    return Math.random() < 0.5 ? allWords.katakana : allWords.hiragana;
+                }
+                return allWords[mode] || allWords.katakana;
+            }
+
+            updateWordsPosition() {
+                for (let i = this.gameState.gameData.words.length - 1; i >= 0; i--) {
+                    const word = this.gameState.gameData.words[i];
+                    if (!word.update()) {
+                        // 画面外に出た単語
+                        this.gameState.gameData.words.splice(i, 1);
+                        if (this.gameState.gameData.combo > 0) {
+                            this.gameState.gameData.combo = 0;
+                            this.soundSystem.play('combo_break');
+                        }
                     }
                 }
             }
-        }
-        return true; // Allow click to pass through if not handled by UI elements above
-    }
 
-    function playBackgroundMusic() {
-        if (!sounds.bgm || !soundEnabled || bgmPlaying) return;
-        sounds.bgm.play().then(() => { bgmPlaying = true; })
-                         .catch(e => { console.error("BGM play error:", e); bgmPlaying = false; });
-    }
+            startGame() {
+                this.soundSystem.play('click');
+                this.gameState.resetGame();
+                this.gameState.currentScreen = 'game';
+                this.gameState.gameData.isGameActive = true;
+                this.gameState.gameData.gameStartTime = Date.now();
+                
+                this.showScreen('game');
+                this.updateUI();
+                this.updateInput();
+                
+                // タイマー開始
+                this.gameTimer = setInterval(() => {
+                    if (!this.gameState.gameData.isPaused) {
+                        this.gameState.gameData.timeLeft--;
+                        this.updateUI();
+                        
+                        if (this.gameState.gameData.timeLeft <= 0) {
+                            this.endGame();
+                        }
+                    }
+                }, 1000);
+                
+                // 単語スポーン開始
+                this.wordSpawnTimer = setInterval(() => {
+                    if (!this.gameState.gameData.isPaused) {
+                        this.spawnWord();
+                    }
+                }, GAME_CONFIG.spawnIntervals[this.gameState.gameSettings.difficulty]);
+                
+                // ゲームループ開始
+                this.gameLoop();
+                
+                // BGM開始
+                this.soundSystem.playBGM();
+            }
 
-    p.windowResized = function() {
-        width = p.windowWidth; height = p.windowHeight;
-        p.resizeCanvas(width, height); createButtons();
-        if (isMobile) {
-            createVirtualKeyboard();
-            if (flickKeyboardLayout.length > 0 || isFlickInputActive) createFlickKeyboard(); // Recreate if it was active or already created
-        }
-        initKeyboardOverlay(); 
-    };
-};
-new p5(sketch);
-    </script>
-<footer class="text-center mt-12 py-8 border-t border-stone-300">
-  <p class="text-sm text-stone-600">&copy; 2025 TK2 LAB.</p>
-</footer>
+            gameLoop() {
+                if (!this.gameState.gameData.isGameActive) return;
+                
+                this.updateWordsPosition();
+                
+                if (this.gameState.gameData.isGameActive) {
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
 
-</body>
-</html>
+            pauseGame() {
+                this.gameState.gameData.isPaused = true;
+                this.showScreen('pause');
+                this.soundSystem.stopBGM();
+            }
+
+            resumeGame() {
+                this.gameState.gameData.isPaused = false;
+                this.showScreen('game');
+                this.soundSystem.playBGM();
+            }
+
+            restartGame() {
+                this.endGame(false);
+                this.startGame();
+            }
+
+            quitGame() {
+                this.endGame(false);
+                this.showScreen('menu');
+            }
+
+            endGame(saveData = true) {
+                this.gameState.gameData.isGameActive = false;
+                this.soundSystem.stopBGM();
+                
+                if (this.gameTimer) {
+                    clearInterval(this.gameTimer);
+                    this.gameTimer = null;
+                }
+                if (this.wordSpawnTimer) {
+                    clearInterval(this.wordSpawnTimer);
+                    this.wordSpawnTimer = null;
+                }
+                
+                // 残った単語を削除
+                this.gameState.gameData.words.forEach(word => word.remove());
+                this.gameState.gameData.words = [];
+                
+                // パーティクルをクリア
+                document.getElementById('particlesContainer').innerHTML = '';
+                
+                if (saveData) {
+                    this.saveGameResult();
+                    this.showResults();
+                }
+            }
+
+            saveGameResult() {
+                const gameData = this.gameState.gameData;
+                const playTime = (Date.now() - gameData.gameStartTime) / 1000;
+                const wpm = Math.round((gameData.correctKeystrokes / 5) / (playTime / 60));
+                const accuracy = gameData.totalKeystrokes > 0 ? 
+                    Math.round((gameData.correctKeystrokes / gameData.totalKeystrokes) * 100) : 100;
+                
+                // XP計算
+                const baseXP = Math.floor(gameData.score / 100);
+                const comboBonus = Math.floor(gameData.maxCombo / 5) * 10;
+                const accuracyBonus = accuracy >= 95 ? 50 : accuracy >= 90 ? 25 : 0;
+                const totalXP = baseXP + comboBonus + accuracyBonus;
+                
+                // ゲーム記録を保存
+                const gameRecord = {
+                    date: new Date().toISOString(),
+                    score: gameData.score,
+                    wordsTyped: gameData.wordsTyped,
+                    maxCombo: gameData.maxCombo,
+                    wpm: wpm,
+                    accuracy: accuracy,
+                    difficulty: this.gameState.gameSettings.difficulty,
+                    mode: this.gameState.gameSettings.mode,
+                    playTime: playTime,
+                    xpGained: totalXP
+                };
+                
+                // プレイヤーデータ更新
+                const playerData = this.gameState.playerData;
+                playerData.totalGames++;
+                playerData.totalWordsTyped += gameData.wordsTyped;
+                playerData.totalPlayTime += playTime;
+                
+                if (gameData.score > playerData.bestScore) {
+                    playerData.bestScore = gameData.score;
+                    this.isNewRecord = true;
+                }
+                
+                // レベルアップチェック
+                this.leveledUp = this.gameState.addXP(totalXP);
+                this.xpGained = totalXP;
+                
+                // 最近のゲーム履歴に追加
+                playerData.recentGames.unshift(gameRecord);
+                if (playerData.recentGames.length > 20) {
+                    playerData.recentGames = playerData.recentGames.slice(0, 20);
+                }
+                
+                // 実績チェック
+                this.checkAchievements(gameRecord);
+                
+                // データ保存
+                this.gameState.savePlayerData();
+            }
+
+            checkAchievements(gameRecord) {
+                const achievements = [];
+                
+                if (gameRecord.score >= 1000 && !this.hasAchievement('score_1000')) {
+                    achievements.push({ id: 'score_1000', name: 'スコア1000達成', description: '1ゲームで1000点以上を獲得' });
+                }
+                if (gameRecord.maxCombo >= 10 && !this.hasAchievement('combo_10')) {
+                    achievements.push({ id: 'combo_10', name: 'コンボマスター', description: '10コンボ以上を達成' });
+                }
+                if (gameRecord.accuracy >= 95 && !this.hasAchievement('accuracy_95')) {
+                    achievements.push({ id: 'accuracy_95', name: 'パーフェクト', description: '正確性95%以上を達成' });
+                }
+                if (this.gameState.playerData.totalGames >= 10 && !this.hasAchievement('games_10')) {
+                    achievements.push({ id: 'games_10', name: 'ベテラン', description: '10ゲーム以上プレイ' });
+                }
+                
+                achievements.forEach(achievement => {
+                    this.gameState.playerData.achievements.push({
+                        ...achievement,
+                        unlockedAt: new Date().toISOString()
+                    });
+                });
+                
+                this.newAchievements = achievements;
+            }
+
+            hasAchievement(id) {
+                return this.gameState.playerData.achievements.some(a => a.id === id);
+            }
+
+            showResults() {
+                this.gameState.currentScreen = 'results';
+                this.showScreen('results');
+                
+                // 結果表示
+                document.getElementById('finalScore').textContent = this.gameState.gameData.score;
+                document.getElementById('finalWords').textContent = this.gameState.gameData.wordsTyped;
+                document.getElementById('finalCombo').textContent = this.gameState.gameData.maxCombo;
+                
+                const playTime = (Date.now() - this.gameState.gameData.gameStartTime) / 1000;
+                const wpm = Math.round((this.gameState.gameData.correctKeystrokes / 5) / (playTime / 60));
+                const accuracy = this.gameState.gameData.totalKeystrokes > 0 ? 
+                    Math.round((this.gameState.gameData.correctKeystrokes / this.gameState.gameData.totalKeystrokes) * 100) : 100;
+                
+                document.getElementById('finalWPM').textContent = wpm;
+                document.getElementById('finalAccuracy').textContent = accuracy;
+                
+                // XP獲得表示
+                if (this.xpGained > 0) {
+                    document.getElementById('xpAmount').textContent = this.xpGained;
+                    document.getElementById('xpGained').classList.remove('hidden');
+                }
+                
+                // 新記録表示
+                if (this.isNewRecord) {
+                    document.getElementById('newRecord').classList.remove('hidden');
+                }
+                
+                // レベルアップ表示
+                if (this.leveledUp) {
+                    document.getElementById('newLevel').textContent = this.gameState.playerData.level;
+                    document.getElementById('levelUp').classList.remove('hidden');
+                }
+            }
+
+            showTutorial() {
+                this.tutorialStep = 0;
+                this.showScreen('tutorial');
+                this.updateTutorial();
+            }
+
+            updateTutorial() {
+                const steps = [
+                    {
+                        title: 'ゲームの基本',
+                        content: `
+                            <h3 class="font-bold mb-2">タイピングゲームへようこそ！</h3>
+                            <p class="mb-2">画面上から落ちてくる単語のローマ字を正確に入力します。</p>
+                            <p class="mb-2">例：「ポリゴン」→「porigon」</p>
+                            <p>制限時間内にできるだけ多くの単語を入力してスコアを稼ぎましょう！</p>
+                        `
+                    },
+                    {
+                        title: 'コンボシステム',
+                        content: `
+                            <h3 class="font-bold mb-2">コンボでスコアアップ！</h3>
+                            <p class="mb-2">連続して単語を正確に入力するとコンボが増加します。</p>
+                            <p class="mb-2">コンボが高いほど獲得スコアが増加します。</p>
+                            <p>ミスをしたり単語を見逃すとコンボがリセットされるので注意！</p>
+                        `
+                    },
+                    {
+                        title: '入力モード',
+                        content: `
+                            <h3 class="font-bold mb-2">2つの入力モード</h3>
+                            <p class="mb-2"><strong>QWERTYモード：</strong>PCキーボードと同じ配列</p>
+                            <p class="mb-2"><strong>フリックモード：</strong>スマホのフリック入力風</p>
+                            <p>ゲーム中でも「切替」ボタンで自由に変更できます。</p>
+                        `
+                    },
+                    {
+                        title: '設定とカスタマイズ',
+                        content: `
+                            <h3 class="font-bold mb-2">ゲームをカスタマイズ</h3>
+                            <p class="mb-2"><strong>表示モード：</strong>カタカナ、ひらがな、ミックス</p>
+                            <p class="mb-2"><strong>難易度：</strong>制限時間と単語の落下速度が変化</p>
+                            <p class="mb-2"><strong>統計機能：</strong>プレイ履歴や成長を確認</p>
+                            <p>準備ができたらゲームを開始しましょう！</p>
+                        `
+                    }
+                ];
+                
+                const step = steps[this.tutorialStep];
+                document.getElementById('tutorialContent').innerHTML = step.content;
+                document.getElementById('tutorialStep').textContent = `${this.tutorialStep + 1} / ${steps.length}`;
+                
+                // ボタンの状態更新
+                document.getElementById('tutorialPrev').disabled = this.tutorialStep === 0;
+                document.getElementById('tutorialNext').textContent = 
+                    this.tutorialStep === steps.length - 1 ? '完了' : '次へ';
+            }
+
+            prevTutorialStep() {
+                if (this.tutorialStep > 0) {
+                    this.tutorialStep--;
+                    this.updateTutorial();
+                }
+            }
+
+            nextTutorialStep() {
+                if (this.tutorialStep < 3) {
+                    this.tutorialStep++;
+                    this.updateTutorial();
+                } else {
+                    this.showScreen('menu');
+                }
+            }
+
+            showSettings() {
+                this.showScreen('settings');
+                this.updateSettingsUI();
+            }
+
+            updateSettingsUI() {
+                // モードボタンの状態更新
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.toggle('bg-blue-500', btn.dataset.mode === this.gameState.gameSettings.mode);
+                    btn.classList.toggle('text-white', btn.dataset.mode === this.gameState.gameSettings.mode);
+                });
+                
+                // 難易度ボタンの状態更新
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.classList.toggle('bg-blue-500', btn.dataset.difficulty === this.gameState.gameSettings.difficulty);
+                    btn.classList.toggle('text-white', btn.dataset.difficulty === this.gameState.gameSettings.difficulty);
+                });
+                
+                // サウンド設定
+                document.getElementById('soundToggle').checked = this.gameState.gameSettings.soundEnabled;
+            }
+
+            showStatistics() {
+                this.showScreen('statistics');
+                this.updateStatisticsUI();
+            }
+
+            updateStatisticsUI() {
+                const playerData = this.gameState.playerData;
+                
+                // 基本統計
+                document.getElementById('totalGames').textContent = playerData.totalGames;
+                document.getElementById('bestScore').textContent = playerData.bestScore;
+                
+                // 平均WPM計算
+                const averageWPM = playerData.recentGames.length > 0 ? 
+                    Math.round(playerData.recentGames.reduce((sum, game) => sum + game.wpm, 0) / playerData.recentGames.length) : 0;
+                document.getElementById('averageWPM').textContent = averageWPM;
+                
+                // レベル進行状況
+                document.getElementById('currentLevel').textContent = playerData.level;
+                document.getElementById('currentXP').textContent = playerData.xp;
+                document.getElementById('nextLevelXP').textContent = this.gameState.getXPForLevel(playerData.level);
+                document.getElementById('levelProgress').style.width = this.gameState.getCurrentLevelProgress() + '%';
+                
+                // 実績表示
+                const achievementsContainer = document.getElementById('achievements');
+                achievementsContainer.innerHTML = '';
+                
+                playerData.achievements.forEach(achievement => {
+                    const achievementElement = document.createElement('div');
+                    achievementElement.className = 'achievement-badge text-white p-3 rounded-lg';
+                    achievementElement.innerHTML = `
+                        <div class="font-bold">${achievement.name}</div>
+                        <div class="text-sm opacity-90">${achievement.description}</div>
+                    `;
+                    achievementsContainer.appendChild(achievementElement);
+                });
+                
+                if (playerData.achievements.length === 0) {
+                    achievementsContainer.innerHTML = '<p class="text-white/70">まだ実績がありません</p>';
+                }
+                
+                // 最近のゲーム履歴
+                const recentGamesContainer = document.getElementById('recentGames');
+                recentGamesContainer.innerHTML = '';
+                
+                playerData.recentGames.slice(0, 10).forEach(game => {
+                    const gameElement = document.createElement('div');
+                    gameElement.className = 'bg-white/10 rounded p-3 text-white';
+                    const date = new Date(game.date).toLocaleDateString('ja-JP');
+                    gameElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">${game.score}pt</div>
+                                <div class="text-sm opacity-75">${date}</div>
+                            </div>
+                            <div class="text-right text-sm">
+                                <div>WPM: ${game.wpm}</div>
+                                <div>正確性: ${game.accuracy}%</div>
+                            </div>
+                        </div>
+                    `;
+                    recentGamesContainer.appendChild(gameElement);
+                });
+                
+                if (playerData.recentGames.length === 0) {
+                    recentGamesContainer.innerHTML = '<p class="text-white/70">まだゲーム履歴がありません</p>';
+                }
+            }
+
+            changeMode(mode) {
+                this.gameState.gameSettings.mode = mode;
+                this.gameState.saveSettings();
+                this.updateUI();
+                this.updateSettingsUI();
+                this.soundSystem.play('click');
+            }
+
+            changeDifficulty(difficulty) {
+                this.gameState.gameSettings.difficulty = difficulty;
+                this.gameState.saveSettings();
+                this.updateUI();
+                this.updateSettingsUI();
+                this.soundSystem.play('click');
+            }
+
+            toggleInputMode() {
+                const currentMode = this.gameState.gameSettings.inputMode;
+                this.gameState.gameSettings.inputMode = currentMode === 'qwerty' ? 'flick' : 'qwerty';
+                this.gameState.saveSettings();
+                this.updateInputModeUI();
+                this.soundSystem.play('click');
+            }
+
+            updateInputModeUI() {
+                const isQwerty = this.gameState.gameSettings.inputMode === 'qwerty';
+                
+                document.getElementById('qwertyKeyboard').classList.toggle('hidden', !isQwerty);
+                document.getElementById('flickKeyboard').classList.toggle('hidden', isQwerty);
+                document.getElementById('inputModeText').textContent = isQwerty ? 'フリック入力' : 'QWERTY入力';
+            }
+
+            showScreen(screenName) {
+                const screens = ['menu', 'game', 'settings', 'statistics', 'tutorial', 'pause', 'results'];
+                screens.forEach(screen => {
+                    const element = document.getElementById(screen + 'Screen');
+                    if (element) {
+                        element.classList.toggle('hidden', screen !== screenName);
+                    }
+                });
+                this.gameState.currentScreen = screenName;
+                
+                if (screenName === 'game') {
+                    this.updateInputModeUI();
+                }
+            }
+
+            updateUI() {
+                // メニュー画面の現在設定表示
+                const modeNames = { katakana: 'カタカナ', hiragana: 'ひらがな', mixed: 'ミックス' };
+                const difficultyNames = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
+                
+                document.getElementById('currentMode').textContent = modeNames[this.gameState.gameSettings.mode];
+                document.getElementById('currentDifficulty').textContent = difficultyNames[this.gameState.gameSettings.difficulty];
+                
+                // ゲーム画面UI更新
+                if (this.gameState.currentScreen === 'game') {
+                    document.getElementById('score').textContent = this.gameState.gameData.score;
+                    document.getElementById('timeLeft').textContent = this.gameState.gameData.timeLeft;
+                    
+                    const comboElement = document.getElementById('combo');
+                    if (this.gameState.gameData.combo > 1) {
+                        comboElement.classList.remove('hidden');
+                        comboElement.querySelector('span').
