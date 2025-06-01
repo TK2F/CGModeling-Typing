@@ -392,6 +392,16 @@
                         <p class="text-sm opacity-80">VRoidとCGモデリング用語を学べるタイピングゲーム</p>
                     </div>
                     
+                    <!-- 開発情報 -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">💻 開発</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <p class="text-sm font-semibold">TK2 Lab & Claude</p>
+                            <p class="text-xs opacity-70 mt-2">©2025 TK2 Lab All rights reserved.</p>
+                            <p class="text-xs opacity-70 mt-1">※本ゲーム自体の著作権はTK2 Labに帰属します</p>
+                        </div>
+                    </div>
+                    
                     <!-- BGM -->
                     <div>
                         <h3 class="text-md font-bold mb-2">🎵 BGM</h3>
@@ -401,6 +411,7 @@
                             <a href="https://dova-s.jp/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
                                 https://dova-s.jp/
                             </a>
+                            <p class="text-xs opacity-70 mt-2">※BGMの著作権は原作者に帰属します</p>
                         </div>
                     </div>
                     
@@ -412,6 +423,19 @@
                             <a href="https://soundeffect-lab.info/" target="_blank" rel="noopener" class="text-blue-300 hover:text-blue-400 text-sm underline">
                                 https://soundeffect-lab.info/
                             </a>
+                            <p class="text-xs opacity-70 mt-2">※効果音の著作権は原作者に帰属します</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 利用規約・ライセンス -->
+                    <div>
+                        <h3 class="text-md font-bold mb-2">📄 利用について</h3>
+                        <div class="bg-white/10 rounded-lg p-3">
+                            <p class="text-xs opacity-90">
+                                本ゲームは個人・教育目的での利用を想定しています。<br>
+                                商用利用や再配布についてはTK2 Labまでお問い合わせください。<br>
+                                使用素材（BGM・効果音）については各提供元の利用規約に従ってください。
+                            </p>
                         </div>
                     </div>
                     
@@ -425,15 +449,6 @@
                                 <li>• Google Fonts (Noto Sans JP)</li>
                                 <li>• Web Storage API</li>
                             </ul>
-                        </div>
-                    </div>
-                    
-                    <!-- 開発情報 -->
-                    <div>
-                        <h3 class="text-md font-bold mb-2">💻 開発</h3>
-                        <div class="bg-white/10 rounded-lg p-3">
-                            <p class="text-sm">TK2 LAB & Claude</p>
-                            <p class="text-xs opacity-70 mt-2">© 2025 TK2 LAB All rights reserved.</p>
                         </div>
                     </div>
                 </div>
@@ -1014,6 +1029,12 @@
                 this.gameLoopId = null;
                 this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 
+                // 初期化フラグ
+                this.isNewRecord = false;
+                this.leveledUp = false;
+                this.xpGained = 0;
+                this.newAchievements = [];
+                
                 this.init();
             }
 
@@ -1029,11 +1050,11 @@
 
             setupEventListeners() {
                 // メニューボタン
-                document.getElementById('startGame').addEventListener('click', () => this.startGame());
-                document.getElementById('tutorialBtn').addEventListener('click', () => this.showTutorial());
-                document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
-                document.getElementById('statisticsBtn').addEventListener('click', () => this.showStatistics());
-                document.getElementById('creditsBtn').addEventListener('click', () => this.showCredits());
+                document.getElementById('startGame')?.addEventListener('click', () => this.startGame());
+                document.getElementById('tutorialBtn')?.addEventListener('click', () => this.showTutorial());
+                document.getElementById('settingsBtn')?.addEventListener('click', () => this.showSettings());
+                document.getElementById('statisticsBtn')?.addEventListener('click', () => this.showStatistics());
+                document.getElementById('creditsBtn')?.addEventListener('click', () => this.showCredits());
                 
                 // 設定画面
                 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -1042,35 +1063,35 @@
                 document.querySelectorAll('.difficulty-btn').forEach(btn => {
                     btn.addEventListener('click', () => this.changeDifficulty(btn.dataset.difficulty));
                 });
-                document.getElementById('soundToggle').addEventListener('change', (e) => {
+                document.getElementById('soundToggle')?.addEventListener('change', (e) => {
                     this.gameState.gameSettings.soundEnabled = e.target.checked;
                     this.soundSystem.setEnabled(e.target.checked);
                     this.gameState.saveSettings();
                 });
-                document.getElementById('backToMenu').addEventListener('click', () => this.showScreen('menu'));
+                document.getElementById('backToMenu')?.addEventListener('click', () => this.showScreen('menu'));
                 
                 // ゲーム画面
-                document.getElementById('pauseBtn').addEventListener('click', () => this.pauseGame());
-                document.getElementById('toggleInput').addEventListener('click', () => this.toggleInputMode());
+                document.getElementById('pauseBtn')?.addEventListener('click', () => this.pauseGame());
+                document.getElementById('toggleInput')?.addEventListener('click', () => this.toggleInputMode());
                 
                 // ポーズ画面
-                document.getElementById('resumeGame').addEventListener('click', () => this.resumeGame());
-                document.getElementById('restartGame').addEventListener('click', () => this.restartGame());
-                document.getElementById('quitGame').addEventListener('click', () => this.quitGame());
+                document.getElementById('resumeGame')?.addEventListener('click', () => this.resumeGame());
+                document.getElementById('restartGame')?.addEventListener('click', () => this.restartGame());
+                document.getElementById('quitGame')?.addEventListener('click', () => this.quitGame());
                 
                 // 結果画面
-                document.getElementById('playAgain').addEventListener('click', () => this.startGame());
-                document.getElementById('backToMenuFromResults').addEventListener('click', () => this.showScreen('menu'));
+                document.getElementById('playAgain')?.addEventListener('click', () => this.startGame());
+                document.getElementById('backToMenuFromResults')?.addEventListener('click', () => this.showScreen('menu'));
                 
                 // 統計画面
-                document.getElementById('backToMenuFromStats').addEventListener('click', () => this.showScreen('menu'));
+                document.getElementById('backToMenuFromStats')?.addEventListener('click', () => this.showScreen('menu'));
                 
                 // クレジット画面
-                document.getElementById('backToMenuFromCredits').addEventListener('click', () => this.showScreen('menu'));
+                document.getElementById('backToMenuFromCredits')?.addEventListener('click', () => this.showScreen('menu'));
                 
                 // チュートリアル
-                document.getElementById('tutorialPrev').addEventListener('click', () => this.prevTutorialStep());
-                document.getElementById('tutorialNext').addEventListener('click', () => this.nextTutorialStep());
+                document.getElementById('tutorialPrev')?.addEventListener('click', () => this.prevTutorialStep());
+                document.getElementById('tutorialNext')?.addEventListener('click', () => this.nextTutorialStep());
                 
                 // キーボード入力
                 document.addEventListener('keydown', (e) => this.handleKeyInput(e));
@@ -1096,7 +1117,7 @@
                 
                 container.innerHTML = '';
                 
-                // スマホの場合は3列×3行のレイアウトに変更
+                // スマホの場合は5列のレイアウトに変更
                 if (this.isMobile) {
                     container.className = 'grid grid-cols-5 gap-1';
                 } else {
@@ -1389,6 +1410,12 @@
                 this.gameState.gameData.isGameActive = true;
                 this.gameState.gameData.gameStartTime = Date.now();
                 
+                // フラグをリセット
+                this.isNewRecord = false;
+                this.leveledUp = false;
+                this.xpGained = 0;
+                this.newAchievements = [];
+                
                 this.showScreen('game');
                 this.updateUI();
                 this.updateInput();
@@ -1581,33 +1608,44 @@
                 this.showScreen('results');
                 
                 // 結果表示
-                document.getElementById('finalScore').textContent = this.gameState.gameData.score;
-                document.getElementById('finalWords').textContent = this.gameState.gameData.wordsTyped;
-                document.getElementById('finalCombo').textContent = this.gameState.gameData.maxCombo;
+                const finalScoreEl = document.getElementById('finalScore');
+                const finalWordsEl = document.getElementById('finalWords');
+                const finalComboEl = document.getElementById('finalCombo');
+                const finalWPMEl = document.getElementById('finalWPM');
+                const finalAccuracyEl = document.getElementById('finalAccuracy');
+                
+                if (finalScoreEl) finalScoreEl.textContent = this.gameState.gameData.score;
+                if (finalWordsEl) finalWordsEl.textContent = this.gameState.gameData.wordsTyped;
+                if (finalComboEl) finalComboEl.textContent = this.gameState.gameData.maxCombo;
                 
                 const playTime = (Date.now() - this.gameState.gameData.gameStartTime) / 1000;
                 const wpm = Math.round((this.gameState.gameData.correctKeystrokes / 5) / (playTime / 60));
                 const accuracy = this.gameState.gameData.totalKeystrokes > 0 ? 
                     Math.round((this.gameState.gameData.correctKeystrokes / this.gameState.gameData.totalKeystrokes) * 100) : 100;
                 
-                document.getElementById('finalWPM').textContent = wpm;
-                document.getElementById('finalAccuracy').textContent = accuracy;
+                if (finalWPMEl) finalWPMEl.textContent = wpm;
+                if (finalAccuracyEl) finalAccuracyEl.textContent = accuracy;
                 
                 // XP獲得表示
                 if (this.xpGained > 0) {
-                    document.getElementById('xpAmount').textContent = this.xpGained;
-                    document.getElementById('xpGained').classList.remove('hidden');
+                    const xpAmountEl = document.getElementById('xpAmount');
+                    const xpGainedEl = document.getElementById('xpGained');
+                    if (xpAmountEl) xpAmountEl.textContent = this.xpGained;
+                    if (xpGainedEl) xpGainedEl.classList.remove('hidden');
                 }
                 
                 // 新記録表示
                 if (this.isNewRecord) {
-                    document.getElementById('newRecord').classList.remove('hidden');
+                    const newRecordEl = document.getElementById('newRecord');
+                    if (newRecordEl) newRecordEl.classList.remove('hidden');
                 }
                 
                 // レベルアップ表示
                 if (this.leveledUp) {
-                    document.getElementById('newLevel').textContent = this.gameState.playerData.level;
-                    document.getElementById('levelUp').classList.remove('hidden');
+                    const newLevelEl = document.getElementById('newLevel');
+                    const levelUpEl = document.getElementById('levelUp');
+                    if (newLevelEl) newLevelEl.textContent = this.gameState.playerData.level;
+                    if (levelUpEl) levelUpEl.classList.remove('hidden');
                 }
             }
 
@@ -1749,4 +1787,473 @@
                 
                 if (currentLevelEl) currentLevelEl.textContent = playerData.level;
                 if (currentXPEl) currentXPEl.textContent = playerData.xp;
-                if (nextLevelXPEl) nextLevelXPEl.textContent = this.gameState.getX
+                if (nextLevelXPEl) nextLevelXPEl.textContent = this.gameState.getXPForLevel(playerData.level);
+                if (levelProgressEl) levelProgressEl.style.width = this.gameState.getCurrentLevelProgress() + '%';
+                
+                // 実績表示
+                const achievementsContainer = document.getElementById('achievements');
+                if (achievementsContainer) {
+                    achievementsContainer.innerHTML = '';
+                    
+                    playerData.achievements.forEach(achievement => {
+                        const achievementElement = document.createElement('div');
+                        achievementElement.className = 'achievement-badge text-white p-3 rounded-lg';
+                        achievementElement.innerHTML = `
+                            <div class="font-bold">${achievement.name}</div>
+                            <div class="text-sm opacity-90">${achievement.description}</div>
+                        `;
+                        achievementsContainer.appendChild(achievementElement);
+                    });
+                    
+                    if (playerData.achievements.length === 0) {
+                        achievementsContainer.innerHTML = '<p class="text-white/70">まだ実績がありません</p>';
+                    }
+                }
+                
+                // 最近のゲーム履歴
+                const recentGamesContainer = document.getElementById('recentGames');
+                if (recentGamesContainer) {
+                    recentGamesContainer.innerHTML = '';
+                    
+                    playerData.recentGames.slice(0, 10).forEach(game => {
+                        const gameElement = document.createElement('div');
+                        gameElement.className = 'bg-white/10 rounded p-3 text-white';
+                        const date = new Date(game.date).toLocaleDateString('ja-JP');
+                        gameElement.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-bold">${game.score}pt</div>
+                                    <div class="text-sm opacity-75">${date}</div>
+                                </div>
+                                <div class="text-right text-sm">
+                                    <div>WPM: ${game.wpm}</div>
+                                    <div>正確性: ${game.accuracy}%</div>
+                                </div>
+                            </div>
+                        `;
+                        recentGamesContainer.appendChild(gameElement);
+                    });
+                    
+                    if (playerData.recentGames.length === 0) {
+                        recentGamesContainer.innerHTML = '<p class="text-white/70">まだゲーム履歴がありません</p>';
+                    }
+                }
+            }
+
+            showCredits() {
+                this.showScreen('credits');
+            }
+
+            changeMode(mode) {
+                this.gameState.gameSettings.mode = mode;
+                this.gameState.saveSettings();
+                this.updateUI();
+                this.updateSettingsUI();
+                this.soundSystem.play('click');
+            }
+
+            changeDifficulty(difficulty) {
+                this.gameState.gameSettings.difficulty = difficulty;
+                this.gameState.saveSettings();
+                this.updateUI();
+                this.updateSettingsUI();
+                this.soundSystem.play('click');
+            }
+
+            toggleInputMode() {
+                const currentMode = this.gameState.gameSettings.inputMode;
+                this.gameState.gameSettings.inputMode = currentMode === 'qwerty' ? 'flick' : 'qwerty';
+                this.gameState.saveSettings();
+                this.updateInputModeUI();
+                this.soundSystem.play('click');
+            }
+
+            updateInputModeUI() {
+                const isQwerty = this.gameState.gameSettings.inputMode === 'qwerty';
+                
+                const qwertyKeyboard = document.getElementById('qwertyKeyboard');
+                const flickKeyboard = document.getElementById('flickKeyboard');
+                const inputModeText = document.getElementById('inputModeText');
+                
+                if (qwertyKeyboard) qwertyKeyboard.classList.toggle('hidden', !isQwerty);
+                if (flickKeyboard) flickKeyboard.classList.toggle('hidden', isQwerty);
+                if (inputModeText) inputModeText.textContent = isQwerty ? 'フリック入力' : 'QWERTY入力';
+            }
+
+            showScreen(screenName) {
+                const screens = ['menu', 'game', 'settings', 'statistics', 'tutorial', 'pause', 'results', 'credits'];
+                screens.forEach(screen => {
+                    const element = document.getElementById(screen + 'Screen');
+                    if (element) {
+                        element.classList.toggle('hidden', screen !== screenName);
+                    }
+                });
+                this.gameState.currentScreen = screenName;
+                
+                if (screenName === 'game') {
+                    this.updateInputModeUI();
+                }
+            }
+
+            updateUI() {
+                // メニュー画面の現在設定表示
+                const modeNames = { katakana: 'カタカナ', hiragana: 'ひらがな', mixed: 'ミックス' };
+                const difficultyNames = { easy: 'かんたん', normal: 'ふつう', hard: 'むずかしい' };
+                
+                const currentModeEl = document.getElementById('currentMode');
+                const currentDifficultyEl = document.getElementById('currentDifficulty');
+                
+                if (currentModeEl) currentModeEl.textContent = modeNames[this.gameState.gameSettings.mode];
+                if (currentDifficultyEl) currentDifficultyEl.textContent = difficultyNames[this.gameState.gameSettings.difficulty];
+                
+                // ゲーム画面UI更新
+                if (this.gameState.currentScreen === 'game') {
+                    const scoreEl = document.getElementById('score');
+                    const timeLeftEl = document.getElementById('timeLeft');
+                    
+                    if (scoreEl) scoreEl.textContent = this.gameState.gameData.score;
+                    if (timeLeftEl) timeLeftEl.textContent = this.gameState.gameData.timeLeft;
+                    
+                    const comboElement = document.getElementById('combo');
+                    if (comboElement) {
+                        if (this.gameState.gameData.combo > 1) {
+                            comboElement.classList.remove('hidden');
+                            const comboSpan = comboElement.querySelector('span');
+                            if (comboSpan) comboSpan.textContent = this.gameState.gameData.combo;
+                        } else {
+                            comboElement.classList.add('hidden');
+                        }
+                    }
+                }
+            }
+
+            handleResize() {
+                // リサイズ時の処理
+                if (this.gameState.currentScreen === 'game') {
+                    // 落下中の単語の位置を調整
+                    this.gameState.gameData.words.forEach(word => {
+                        const maxX = window.innerWidth - 200;
+                        if (word.x > maxX) {
+                            word.x = maxX;
+                            if (word.element) {
+                                word.element.style.left = word.x + 'px';
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        // ===== 初期化 =====
+        let typingGame;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                typingGame = new TypingGame();
+                console.log('タイピングゲーム初期化完了');
+            } catch (error) {
+                console.error('ゲーム初期化エラー:', error);
+                // エラーが発生してもページは表示される
+                document.body.innerHTML = `
+                    <div class="game-gradient min-h-screen flex items-center justify-center">
+                        <div class="text-white text-center">
+                            <h1 class="text-4xl font-bold mb-4">CGモデリング タイピングゲーム NEO</h1>
+                            <p class="text-lg mb-4">初期化中にエラーが発生しました</p>
+                            <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                                再読み込み
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // ===== ユーティリティ関数 =====
+        
+        // パフォーマンス最適化用のデバウンス関数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // レスポンシブ対応
+        const handleResize = debounce(() => {
+            if (typingGame) {
+                typingGame.handleResize();
+            }
+        }, 250);
+
+        window.addEventListener('resize', handleResize);
+
+        // タッチデバイス対応
+        if ('ontouchstart' in window) {
+            document.body.classList.add('touch-device');
+        }
+
+        // ===== エラーハンドリング =====
+        window.addEventListener('error', (e) => {
+            console.error('ゲームエラー:', e.error);
+            // エラーが発生してもゲームを続行できるように
+            if (typingGame && typingGame.gameState.gameData.isGameActive) {
+                console.warn('ゲーム続行中にエラーが発生しましたが、プレイは継続されます');
+            }
+        });
+
+        // ===== キーボードショートカット =====
+        document.addEventListener('keydown', (e) => {
+            // グローバルショートカット
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        if (typingGame && typingGame.gameState.currentScreen === 'game') {
+                            typingGame.restartGame();
+                        }
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        if (typingGame && typingGame.gameState.currentScreen === 'game') {
+                            typingGame.pauseGame();
+                        }
+                        break;
+                }
+            }
+            
+            // F1でヘルプ表示
+            if (e.key === 'F1') {
+                e.preventDefault();
+                if (typingGame) {
+                    typingGame.showTutorial();
+                }
+            }
+        });
+
+        // ===== アクセシビリティ向上 =====
+        
+        // フォーカス管理
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                document.body.classList.add('using-keyboard');
+            }
+        });
+
+        document.addEventListener('mousedown', () => {
+            document.body.classList.remove('using-keyboard');
+        });
+
+        // 高コントラスト対応
+        if (window.matchMedia && window.matchMedia('(prefers-contrast: high)').matches) {
+            document.body.classList.add('high-contrast');
+        }
+
+        // 動きの軽減対応
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.body.classList.add('reduced-motion');
+        }
+
+        // ===== 開発者向けデバッグ機能 =====
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.typingGameDebug = {
+                addXP: (amount) => {
+                    if (typingGame) {
+                        typingGame.gameState.addXP(amount);
+                        typingGame.gameState.savePlayerData();
+                        console.log(`${amount} XP追加されました`);
+                    }
+                },
+                setLevel: (level) => {
+                    if (typingGame) {
+                        typingGame.gameState.playerData.level = level;
+                        typingGame.gameState.playerData.xp = 0;
+                        typingGame.gameState.savePlayerData();
+                        console.log(`レベル${level}に設定されました`);
+                    }
+                },
+                clearData: () => {
+                    localStorage.removeItem('cgTypingPlayerData');
+                    localStorage.removeItem('cgTypingSettings');
+                    console.log('データがクリアされました。ページを再読み込みしてください。');
+                },
+                getPlayerData: () => {
+                    return typingGame ? typingGame.gameState.playerData : null;
+                }
+            };
+            console.log('デバッグ機能が有効です: window.typingGameDebug');
+        }
+    </script>
+
+    <!-- ===== 追加のスタイル（アクセシビリティ） ===== -->
+    <style>
+        /* キーボードフォーカス表示 */
+        .using-keyboard button:focus,
+        .using-keyboard input:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* 高コントラスト対応 */
+        .high-contrast {
+            filter: contrast(2);
+        }
+        
+        /* アニメーション軽減対応 */
+        .reduced-motion * {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+        
+        /* タッチデバイス最適化 */
+        .touch-device button {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            .stats-card {
+                background: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        /* プリント対応 */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* セレクション色 */
+        ::selection {
+            background: rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+        
+        /* フォーカス可能要素のハイライト */
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+        
+        /* ゲーム要素の詳細スタイル */
+        .word-card {
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .word-card.completed {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+        
+        .word-card.error {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border: 2px solid rgba(239, 68, 68, 0.5);
+        }
+        
+        /* パーティクルエフェクトの改良 */
+        .particle-success {
+            background: radial-gradient(circle, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+        
+        .particle-combo {
+            background: radial-gradient(circle, #8b5cf6 0%, #7c3aed 100%);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+        
+        /* 入力フィードバック */
+        .input-correct {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .input-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* レスポンシブ調整 */
+        @media (max-width: 640px) {
+            .mobile-optimized {
+                font-size: 0.875rem;
+            }
+            
+            .mobile-optimized h1 {
+                font-size: 2rem;
+            }
+            
+            .mobile-optimized h2 {
+                font-size: 1.5rem;
+            }
+            
+            .grid-cols-10 {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+        }
+        
+        /* ゲーム状態別のビジュアル調整 */
+        .game-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        }
+        
+        .game-paused {
+            filter: grayscale(0.3) brightness(0.7);
+        }
+        
+        .game-finished {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+        }
+        
+        /* ローディング状態 */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: loading-sweep 2s infinite;
+        }
+        
+        @keyframes loading-sweep {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+    </style>
+</body>
+</html>
